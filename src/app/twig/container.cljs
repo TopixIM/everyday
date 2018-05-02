@@ -20,14 +20,17 @@
    (merge
     base-data
     (if logged-in?
-      {:user (twig-user (get-in db [:users (:user-id session)])),
-       :router (assoc
-                router
-                :data
-                (case (:name router)
-                  :home {}
-                  :profile (twig-members (:sessions db) (:users db))
-                  {})),
-       :count (count (:sessions db)),
-       :color (color/randomColor)}
+      (let [user (get-in db [:users (:user-id session)])]
+        {:user (twig-user user),
+         :router (assoc
+                  router
+                  :data
+                  (case (:name router)
+                    :home {}
+                    :plan (:plan user)
+                    :profile (twig-members (:sessions db) (:users db))
+                    {})),
+         :count (count (:sessions db)),
+         :color (color/randomColor),
+         :date (:date db)})
       nil))))

@@ -3,7 +3,7 @@
 
 (def configs {:storage-key "workflow-storage", :port 5021})
 
-(def database {:sessions {}, :users {}})
+(def database {:sessions {}, :users {}, :date nil})
 
 (def dev? (do ^boolean js/goog.DEBUG))
 

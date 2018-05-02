@@ -4,7 +4,7 @@
             [app.service :refer [run-server! sync-clients!]]
             [app.updater :refer [updater]]
             [cljs.reader :refer [read-string]]
-            [app.util :refer [try-verbosely!]]
+            [app.util :refer [try-verbosely! get-date]]
             [app.reel :refer [reel-reducer refresh-reel reel-schema]]
             ["fs" :as fs]
             ["shortid" :as shortid]
@@ -34,6 +34,7 @@
     (try-verbosely!
      (cond
        (= op :effect/persist) (persist-db!)
+       (= op :effect/refresh-date) (dispatch! :date/refresh (get-date) sid)
        :else
          (let [new-reel (reel-reducer @*reel updater op op-data sid op-id op-time)]
            (reset! *reel new-reel))))))
