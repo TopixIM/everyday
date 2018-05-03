@@ -9,7 +9,7 @@
 
 (def notification {:id nil, :kind nil, :text nil})
 
-(def operation {:task-id nil, :done? false, :time 0})
+(def operation {:done? false, :time 0})
 
 (def page {:id nil, :title "", :time nil})
 

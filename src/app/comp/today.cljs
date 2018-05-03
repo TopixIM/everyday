@@ -1,6 +1,6 @@
 
 (ns app.comp.today
-  (:require [respo.macros :refer [defcomp <> action-> div input button span]]
+  (:require [respo.macros :refer [defcomp <> action-> list-> div input button span]]
             [respo.comp.space :refer [=<]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo-ui.core :as ui]
@@ -9,8 +9,27 @@
 
 (defcomp
  comp-today
- (date)
+ (date plan operations)
  (div
   {:style {:padding 16}}
-  (<> "Today")
-  (button {:style ui/button, :on-click (action-> :effect/refresh-date nil)} (<> date))))
+  (div
+   {}
+   (<> "Today")
+   (=< 16 nil)
+   (button
+    {:style ui/button, :on-click (action-> :effect/refresh-date nil)}
+    (<> (str "Refresh " date))))
+  (list->
+   {}
+   (->> plan
+        (map
+         (fn [[sort-id task]]
+           [sort-id
+            (let [operation (get operations (:id task) schema/operation)]
+              (div
+               {:style ui/row}
+               (span
+                {:on-click (action-> :operation/toggle-task (:id task))}
+                (<> (:done? operation)))
+               (=< 8 nil)
+               (<> (:text task))))]))))))

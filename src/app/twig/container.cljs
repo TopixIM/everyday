@@ -16,7 +16,8 @@
  (db session records)
  (let [logged-in? (some? (:user-id session))
        router (:router session)
-       base-data {:logged-in? logged-in?, :session session, :reel-length (count records)}]
+       base-data {:logged-in? logged-in?, :session session, :reel-length (count records)}
+       date (:date db)]
    (merge
     base-data
     (if logged-in?
@@ -26,7 +27,9 @@
                   router
                   :data
                   (case (:name router)
-                    :home {}
+                    :home
+                      {:plan (:plan user),
+                       :operations (when (some? date) (get-in user [:days date] {}))}
                     :plan (:plan user)
                     :profile (twig-members (:sessions db) (:users db))
                     {})),

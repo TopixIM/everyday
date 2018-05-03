@@ -7,7 +7,8 @@
             [app.schema :as schema]
             [app.style :as style]
             [clojure.string :as string]
-            [hsl.core :refer [hsl]]))
+            [hsl.core :refer [hsl]]
+            [respo-ui.comp.icon :refer [comp-icon]]))
 
 (defcomp
  comp-task
@@ -15,30 +16,30 @@
  (div
   {:style (merge
            ui/row-parted
-           {:width 200, :background-color (hsl 0 0 96), :margin "0 16px 16px 0", :padding 8})}
+           {:width 320, :background-color (hsl 0 0 96), :margin "0 8px 8px 0", :padding 8})}
   (<> (:text task))
   (div
    {:style ui/row}
    (span
-    {:inner-text "edit",
-     :on-click (fn [e d! m!]
+    {:on-click (fn [e d! m!]
        (let [text (js/prompt "New content?" (:text task))]
-         (when (not (string/blank? text)) (d! :plan/update-text {:id sort-id, :text text}))))})
-   (=< 8 nil)
+         (when (not (string/blank? text)) (d! :plan/update-text {:id sort-id, :text text}))))}
+    (comp-icon "compose"))
+   (=< 16 nil)
    (span
-    {:inner-text "rm",
-     :on-click (fn [e d! m!]
+    {:on-click (fn [e d! m!]
        (let [confirmation? (js/confirm "Remove?")]
-         (when confirmation? (d! :plan/remove-one sort-id))))}))))
+         (when confirmation? (d! :plan/remove-one sort-id))))}
+    (comp-icon "ios-trash")))))
 
 (defcomp
  comp-plan
  (plan)
  (div
   {:style {:padding 16}}
-  (<> "Plan")
+  (div {:style {:font-size 24, :font-family ui/font-fancy, :font-weight 300}} (<> "Plan"))
   (list->
-   {:style (merge ui/row {:flex-wrap :wrap})}
+   {:style (merge)}
    (->> plan (sort-by first) (map (fn [[k task]] [k (div {} (comp-task k task))]))))
   (button
    {:style ui/button,

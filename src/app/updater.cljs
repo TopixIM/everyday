@@ -3,7 +3,8 @@
   (:require [app.updater.session :as session]
             [app.updater.user :as user]
             [app.updater.router :as router]
-            [app.updater.plan :as plan]))
+            [app.updater.plan :as plan]
+            [app.updater.operation :as operation]))
 
 (defn set-date [db op-data sid op-id op-time] (assoc db :date op-data))
 
@@ -20,5 +21,6 @@
             :plan/create plan/create
             :plan/update-text plan/update-text
             :plan/remove-one plan/remove-one
+            :operation/toggle-task operation/toggle-task
             (do (println "Unknown op:" op) identity))]
     (f db op-data sid op-id op-time)))

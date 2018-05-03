@@ -53,7 +53,7 @@
       (comp-navigation (:logged-in? store) (:count store))
       (if (:logged-in? store)
         (case (:name router)
-          :home (comp-today (:date store))
+          :home (comp-today (:date store) (:plan router-data) (:operations router-data))
           :plan (comp-plan router-data)
           :profile (comp-profile (:user store) router-data)
           (<> router))
