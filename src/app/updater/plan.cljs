@@ -13,7 +13,7 @@
 
 (defn remove-one [db op-data sid op-id op-time]
   (let [sort-id op-data, user-id (get-in db [:sessions sid :user-id])]
-    (update-in db [:users user-id :plan] (fn [plan] (dissoc plan sort-id)))))
+    (assoc-in db [:users user-id :plan sort-id :deleted?] true)))
 
 (defn update-text [db op-data sid op-id op-time]
   (let [sort-id (:id op-data)

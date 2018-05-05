@@ -13,7 +13,8 @@
             [app.comp.reel :refer [comp-reel]]
             [app.schema :refer [dev?]]
             [app.comp.plan :refer [comp-plan]]
-            [app.comp.today :refer [comp-today]]))
+            [app.comp.today :refer [comp-today]]
+            [app.comp.history :refer [comp-history]]))
 
 (defcomp
  comp-offline
@@ -56,6 +57,7 @@
           :home (comp-today (:date session) (:plan router-data) (:operations router-data))
           :plan (comp-plan router-data)
           :profile (comp-profile (:user store) router-data)
+          :history (comp-history (:plan router-data) (:days router-data))
           (<> router))
         (comp-login states))
       (comp-status-color (:color store))

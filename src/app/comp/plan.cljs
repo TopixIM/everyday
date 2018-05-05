@@ -37,7 +37,7 @@
  (plan)
  (div
   {:style {:padding 16}}
-  (div {:style {:font-size 24, :font-family ui/font-fancy, :font-weight 300}} (<> "Plan"))
+  (div {:style style/title} (<> "Plan"))
   (list->
    {:style (merge)}
    (->> plan (sort-by first) (map (fn [[k task]] [k (div {} (comp-task k task))]))))
