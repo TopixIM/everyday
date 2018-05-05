@@ -16,7 +16,15 @@
  (div
   {:style (merge
            ui/row-parted
-           {:width 320, :background-color (hsl 0 0 96), :margin "0 8px 8px 0", :padding 8})}
+           {:width 320, :background-color (hsl 0 0 96), :margin "0 8px 8px 0", :padding 8}),
+   :draggable true,
+   :on-dragstart (fn [e d! m!] (.. (:event e) -dataTransfer (setData "text/plain" sort-id))),
+   :on-dragover (fn [e d! m!]
+     (.preventDefault (:event e))
+     (set! (.. (:event e) -dataTransfer -dropEffect) "move")),
+   :on-drop (fn [e d! m!]
+     (let [drag-id (.. (:event e) -dataTransfer (getData "text")), drop-id sort-id]
+       (when (not= drag-id drop-id) (d! :plan/move {:from drag-id, :to drop-id}))))}
   (<> (:text task))
   (div
    {:style ui/row}
