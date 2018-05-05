@@ -1,7 +1,7 @@
 
 (ns app.schema )
 
-(def configs {:storage-key "workflow-storage", :port 5021})
+(def configs {:storage-key "daily", :port 11007})
 
 (def database {:sessions {}, :users {}, :date nil})
 
