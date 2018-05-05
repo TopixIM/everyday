@@ -48,7 +48,10 @@
   (div {:style style/title} (<> "Plan"))
   (list->
    {:style (merge)}
-   (->> plan (sort-by first) (map (fn [[k task]] [k (div {} (comp-task k task))]))))
+   (->> plan
+        (filter (fn [[k task]] (not (:deleted? task))))
+        (sort-by first)
+        (map (fn [[k task]] [k (div {} (comp-task k task))]))))
   (button
    {:style ui/button,
     :on-click (fn [e d! m!]
