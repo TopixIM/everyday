@@ -20,7 +20,8 @@
    :id nil,
    :nickname nil,
    :router {:name :home, :data nil, :router nil},
-   :notifications []})
+   :notifications [],
+   :date nil})
 
 (def task {:id nil, :text "", :time 0, :deleted? false})
 

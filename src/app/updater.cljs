@@ -6,8 +6,6 @@
             [app.updater.plan :as plan]
             [app.updater.operation :as operation]))
 
-(defn set-date [db op-data sid op-id op-time] (assoc db :date op-data))
-
 (defn updater [db op op-data sid op-id op-time]
   (let [f (case op
             :session/connect session/connect
@@ -16,8 +14,8 @@
             :user/sign-up user/sign-up
             :user/log-out user/log-out
             :session/remove-notification session/remove-notification
+            :session/local-date session/local-date
             :router/change router/change
-            :date/refresh set-date
             :plan/create plan/create
             :plan/update-text plan/update-text
             :plan/remove-one plan/remove-one

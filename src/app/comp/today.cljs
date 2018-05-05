@@ -13,13 +13,7 @@
  (date plan operations)
  (div
   {:style {:padding 16}}
-  (div
-   {}
-   (<> "Today")
-   (=< 16 nil)
-   (button
-    {:style ui/button, :on-click (action-> :effect/refresh-date nil)}
-    (<> (str "Refresh " date))))
+  (div {} (<> (str "Today(" date ")")))
   (list->
    {}
    (->> plan

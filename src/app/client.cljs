@@ -5,7 +5,8 @@
             [app.comp.container :refer [comp-container]]
             [cljs.reader :refer [read-string]]
             [app.connection :refer [send! setup-socket!]]
-            [app.schema :as schema]))
+            [app.schema :as schema]
+            [app.util :refer [get-date]]))
 
 (declare dispatch!)
 
@@ -35,7 +36,7 @@
    *store
    {:url (str "ws://" (.-hostname js/location) ":" (:port schema/configs)),
     :on-close! (fn [event] (reset! *store nil) (.error js/console "Lost connection!")),
-    :on-open! (fn [event] (simulate-login!))}))
+    :on-open! (fn [event] (simulate-login!) (dispatch! :session/local-date (get-date)))}))
 
 (def mount-target (.querySelector js/document ".app"))
 

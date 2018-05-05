@@ -17,7 +17,7 @@
  (let [logged-in? (some? (:user-id session))
        router (:router session)
        base-data {:logged-in? logged-in?, :session session, :reel-length (count records)}
-       date (:date db)]
+       date (:date session)]
    (merge
     base-data
     (if logged-in?
@@ -31,6 +31,7 @@
                       {:plan (:plan user),
                        :operations (when (some? date) (get-in user [:days date] {}))}
                     :plan (:plan user)
+                    :history {:plan (:plan user), :days (:days user)}
                     :profile (twig-members (:sessions db) (:users db))
                     {})),
          :count (count (:sessions db)),

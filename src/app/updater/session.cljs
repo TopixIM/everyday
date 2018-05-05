@@ -7,6 +7,8 @@
 (defn disconnect [db op-data sid op-id op-time]
   (update db :sessions (fn [session] (dissoc session sid))))
 
+(defn local-date [db op-data sid op-id op-time] (assoc-in db [:sessions sid :date] op-data))
+
 (defn remove-notification [db op-data sid op-id op-time]
   (update-in
    db
