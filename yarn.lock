@@ -702,6 +702,10 @@ date-now@^0.1.4:
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/date-now/-/date-now-0.1.4.tgz#eaf439fd4d4848ad74e5cc7dbef200672b9e345b"
 
+dayjs@^1.5.24:
+  version "1.5.24"
+  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.5.24.tgz#840e8dce359a552beacc0ba38fb819153929833b"
+
 debug@^2.2.0, debug@^2.6.8:
   version "2.6.9"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.9.tgz#5d128515df134ff327e90a4c93f4e077a536341f"
@@ -915,10 +919,6 @@ loose-envify@^1.0.0:
   resolved "https://registry.yarnpkg.com/loose-envify/-/loose-envify-1.3.1.tgz#d1a8ad33fa9ce0e713d65fdd0ac8b748d478c848"
   dependencies:
     js-tokens "^3.0.0"
-
-luxon@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/luxon/-/luxon-1.2.0.tgz#d438567c890c05c8fcb2d462af7ea66a5fbb0efa"
 
 md5.js@^1.3.4:
   version "1.3.4"
@@ -1226,9 +1226,9 @@ shadow-cljs-jar@1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/shadow-cljs-jar/-/shadow-cljs-jar-1.1.2.tgz#88664fae5957a7c21554e1a33476f1c475162c92"
 
-shadow-cljs@^2.3.17:
-  version "2.3.17"
-  resolved "https://registry.yarnpkg.com/shadow-cljs/-/shadow-cljs-2.3.17.tgz#43575fff58df540684a58bbf0bee4cc2e4c36078"
+shadow-cljs@^2.3.21:
+  version "2.3.21"
+  resolved "https://registry.yarnpkg.com/shadow-cljs/-/shadow-cljs-2.3.21.tgz#419918717a009007b1d809f93f575e4ecab8da65"
   dependencies:
     babel-core "^6.26.0"
     babel-preset-env "^1.6.0"
