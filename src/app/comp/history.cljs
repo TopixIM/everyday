@@ -33,8 +33,10 @@
  comp-history
  (plan days)
  (div
-  {}
+  {:style (merge ui/column ui/flex {:overflow :auto})}
   (div {:style (merge style/title {:padding 16})} (<> "History"))
   (list->
-   {}
-   (->> days (map (fn [[date operations]] [date (comp-records plan date operations)]))))))
+   {:style (merge ui/flex {:padding-bottom 160})}
+   (->> days
+        (sort (fn [[date-x _] [date-y _]] (compare date-y date-x)))
+        (map (fn [[date operations]] [date (comp-records plan date operations)]))))))
