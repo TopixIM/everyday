@@ -22,6 +22,8 @@
           :page {:target :node-script
                  :output-to "target/page.js"
                  :main app.page/main!
+                 :js-options {:resolve {"alertify.js" {:target :file
+                                                       :file "entry/alert-ssr.js"}}}
                  :devtools {:after-load app.page/main!}}
           :server {:target :node-script
                    :output-to "target/server.js"
