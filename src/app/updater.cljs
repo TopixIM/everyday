@@ -19,6 +19,7 @@
             :plan/create plan/create
             :plan/update-text plan/update-text
             :plan/remove-one plan/remove-one
+            :plan/reuse plan/reuse
             :plan/move plan/move
             :operation/toggle-task operation/toggle-task
             (do (println "Unknown op:" op) identity))]
