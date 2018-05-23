@@ -8,7 +8,8 @@
             [app.style :as style]
             [clojure.string :as string]
             [hsl.core :refer [hsl]]
-            [respo-ui.comp.icon :refer [comp-icon]]))
+            [respo-ui.comp.icon :refer [comp-icon]]
+            ["alertify.js" :as alertify]))
 
 (defcomp
  comp-task
@@ -29,15 +30,21 @@
   (div
    {:style ui/row}
    (span
-    {:on-click (fn [e d! m!]
-       (let [text (js/prompt "New content?" (:text task))]
-         (when (not (string/blank? text)) (d! :plan/update-text {:id sort-id, :text text}))))}
+    {:style {:cursor :pointer},
+     :on-click (fn [e d! m!]
+       (.. alertify
+           (defaultValue (:text task))
+           (prompt
+            "New task:"
+            (fn [text event]
+              (when (not (string/blank? text))
+                (d! :plan/update-text {:id sort-id, :text text}))))))}
     (comp-icon "compose"))
    (=< 16 nil)
    (span
-    {:on-click (fn [e d! m!]
-       (let [confirmation? (js/confirm "Remove?")]
-         (when confirmation? (d! :plan/remove-one sort-id))))}
+    {:style {:cursor :pointer},
+     :on-click (fn [e d! m!]
+       (alertify/confirm "Sure to remove?" (fn [] (d! :plan/remove-one sort-id)) (fn [] )))}
     (comp-icon "ios-trash")))))
 
 (defcomp
@@ -55,6 +62,9 @@
   (button
    {:style ui/button,
     :on-click (fn [e d! m!]
-      (let [text (js/prompt "A name?")]
-        (when (not (string/blank? text)) (d! :plan/create text))))}
+      (.. alertify
+          (defaultValue "")
+          (prompt
+           "A task:"
+           (fn [text event] (when (not (string/blank? text)) (d! :plan/create text))))))}
    (<> "Add"))))
