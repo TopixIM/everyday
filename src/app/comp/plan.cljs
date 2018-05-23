@@ -17,9 +17,11 @@
  (div
   {:style (merge
            ui/row-parted
-           {:width 280, :background-color (hsl 0 0 96), :margin-bottom 8, :padding 8})}
+           {:width 320, :background-color (hsl 0 0 96), :margin-bottom 8, :padding 8})}
   (div {:style ui/flex} (<> (:text task)))
-  (span {:on-click (action-> :plan/reuse sort-key)} (comp-icon :contrast))))
+  (span
+   {:on-click (action-> :plan/reuse sort-key), :style {:cursor :pointer}}
+   (comp-icon :contrast))))
 
 (defcomp
  comp-task
@@ -84,12 +86,11 @@
          (sort-by first)
          (map (fn [[k task]] [k (div {} (comp-task k task))])))))
   (=< nil 80)
-  (div
-   {}
-   (div {:style style/title} (<> "Deleted"))
-   (list->
-    {:style (merge)}
-    (->> plan
-         (filter (fn [[k task]] (:deleted? task)))
-         (sort-by first)
-         (map (fn [[k task]] [k (div {} (comp-deleted-task k task))])))))))
+  (let [deleted-plans (->> plan (filter (fn [[k task]] (:deleted? task))) (sort-by first))]
+    (if (not (empty? deleted-plans))
+      (div
+       {}
+       (div {:style (merge style/title {:color (hsl 0 0 70)})} (<> "Deleted"))
+       (list->
+        {:style (merge)}
+        (->> deleted-plans (map (fn [[k task]] [k (div {} (comp-deleted-task k task))])))))))))
