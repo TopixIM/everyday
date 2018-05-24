@@ -26,7 +26,8 @@
             :font-size 16,
             :border-bottom (str "1px solid " (hsl 0 0 0 0.1)),
             :font-family ui/font-fancy,
-            :font-weight 100})}
+            :font-weight 100,
+            :flex-shrink 0})}
   (div
    {:style ui/row}
    (comp-entry :home "Daily" (= :home (:name router)))

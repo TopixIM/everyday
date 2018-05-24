@@ -12,6 +12,18 @@
             ["alertify.js" :as alertify]))
 
 (defcomp
+ comp-deleted-task
+ (sort-key task)
+ (div
+  {:style (merge
+           ui/row-parted
+           {:width 320, :background-color (hsl 0 0 96), :margin-bottom 8, :padding 8})}
+  (div {:style ui/flex} (<> (:text task)))
+  (span
+   {:on-click (action-> :plan/reuse sort-key), :style {:cursor :pointer}}
+   (comp-icon :contrast))))
+
+(defcomp
  comp-task
  (sort-id task)
  (div
@@ -51,20 +63,34 @@
  comp-plan
  (plan)
  (div
-  {:style {:padding 16}}
-  (div {:style style/title} (<> "Plan"))
-  (list->
-   {:style (merge)}
-   (->> plan
-        (filter (fn [[k task]] (not (:deleted? task))))
-        (sort-by first)
-        (map (fn [[k task]] [k (div {} (comp-task k task))]))))
-  (button
-   {:style ui/button,
-    :on-click (fn [e d! m!]
-      (.. alertify
-          (defaultValue "")
-          (prompt
-           "A task:"
-           (fn [text event] (when (not (string/blank? text)) (d! :plan/create text))))))}
-   (<> "Add"))))
+  {:style (merge {:padding 16, :overflow :auto, :padding-bottom 200})}
+  (div
+   {}
+   (div
+    {:style (merge ui/row style/title {})}
+    (<> "Plan")
+    (=< 16 nil)
+    (button
+     {:style (merge ui/button {:height 32, :vertical-align :middle}),
+      :on-click (fn [e d! m!]
+        (.. alertify
+            (defaultValue "")
+            (prompt
+             "A task:"
+             (fn [text event] (when (not (string/blank? text)) (d! :plan/create text))))))}
+     (<> "Add")))
+   (list->
+    {:style (merge)}
+    (->> plan
+         (filter (fn [[k task]] (not (:deleted? task))))
+         (sort-by first)
+         (map (fn [[k task]] [k (div {} (comp-task k task))])))))
+  (=< nil 80)
+  (let [deleted-plans (->> plan (filter (fn [[k task]] (:deleted? task))) (sort-by first))]
+    (if (not (empty? deleted-plans))
+      (div
+       {}
+       (div {:style (merge style/title {:color (hsl 0 0 70)})} (<> "Deleted"))
+       (list->
+        {:style (merge)}
+        (->> deleted-plans (map (fn [[k task]] [k (div {} (comp-deleted-task k task))])))))))))
