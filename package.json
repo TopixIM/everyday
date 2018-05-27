@@ -21,15 +21,15 @@
   "license": "MIT",
   "dependencies": {
     "alertify.js": "^1.0.12",
-    "dayjs": "^1.5.24",
+    "dayjs": "^1.6.4",
     "md5": "^2.2.1",
     "randomcolor": "^0.5.3",
     "shortid": "^2.2.6"
   },
   "devDependencies": {
     "http-server": "^0.11.1",
-    "shadow-cljs": "^2.3.23",
-    "source-map-support": "^0.5.5",
-    "ws": "^5.1.1"
+    "shadow-cljs": "^2.3.27",
+    "source-map-support": "^0.5.6",
+    "ws": "^5.2.0"
   }
 }
