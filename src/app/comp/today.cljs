@@ -34,12 +34,12 @@
                         (filter
                          (fn [[sort-id task]]
                            (let [operation (get operations (:id task) schema/operation)]
-                             (not (:done? operation))))))
+                             (and (not (:deleted? task)) (not (:done? operation)))))))
         done-tasks (->> plan
                         (filter
                          (fn [[sort-id task]]
                            (let [operation (get operations (:id task) schema/operation)]
-                             (:done? operation)))))]
+                             (and (not (:deleted? task)) (:done? operation))))))]
     (div
      {:style ui/row}
      (div
