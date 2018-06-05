@@ -1,6 +1,6 @@
 
 (ns app.comp.plan
-  (:require [respo.macros :refer [defcomp <> div list-> action-> input button span]]
+  (:require [respo.macros :refer [defcomp <> div list-> action-> cursor-> input button span]]
             [respo.comp.space :refer [=<]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo-ui.core :as ui]
@@ -9,7 +9,7 @@
             [clojure.string :as string]
             [hsl.core :refer [hsl]]
             [respo-ui.comp.icon :refer [comp-icon]]
-            ["alertify.js" :as alertify]))
+            [respo-alerts.comp.alerts :refer [comp-confirm comp-prompt]]))
 
 (defcomp
  comp-deleted-task
@@ -25,7 +25,7 @@
 
 (defcomp
  comp-task
- (sort-id task)
+ (states sort-id task)
  (div
   {:style (merge
            ui/row-parted
@@ -41,27 +41,27 @@
   (<> (:text task))
   (div
    {:style ui/row}
-   (span
-    {:style {:cursor :pointer},
-     :on-click (fn [e d! m!]
-       (.. alertify
-           (defaultValue (:text task))
-           (prompt
-            "New task:"
-            (fn [text event]
-              (when (not (string/blank? text))
-                (d! :plan/update-text {:id sort-id, :text text}))))))}
-    (comp-icon "compose"))
+   (cursor->
+    :update-prompt
+    comp-prompt
+    states
+    (comp-icon "compose")
+    "New task:"
+    (:text task)
+    (fn [result d! m!]
+      (when (not (string/blank? result)) (d! :plan/update-text {:id sort-id, :text result}))))
    (=< 16 nil)
-   (span
-    {:style {:cursor :pointer},
-     :on-click (fn [e d! m!]
-       (alertify/confirm "Sure to remove?" (fn [] (d! :plan/remove-one sort-id)) (fn [] )))}
-    (comp-icon "ios-trash")))))
+   (cursor->
+    :confirm
+    comp-confirm
+    states
+    (comp-icon "ios-trash")
+    "Sure to remove?"
+    (fn [sure? d! m!] (when sure? (d! :plan/remove-one sort-id)))))))
 
 (defcomp
  comp-plan
- (plan)
+ (states plan)
  (div
   {:style (merge {:padding 16, :overflow :auto, :padding-bottom 200})}
   (div
@@ -70,21 +70,20 @@
     {:style (merge ui/row style/title {})}
     (<> "Plan")
     (=< 16 nil)
-    (button
-     {:style (merge ui/button {:height 32, :vertical-align :middle}),
-      :on-click (fn [e d! m!]
-        (.. alertify
-            (defaultValue "")
-            (prompt
-             "A task:"
-             (fn [text event] (when (not (string/blank? text)) (d! :plan/create text))))))}
-     (<> "Add")))
+    (cursor->
+     :create-prompt
+     comp-prompt
+     states
+     (button {:style (merge ui/button {:height 32, :vertical-align :middle})} (<> "Add"))
+     "A task:"
+     ""
+     (fn [text d! m!] (when (not (string/blank? text)) (d! :plan/create text)))))
    (list->
     {:style (merge)}
     (->> plan
          (filter (fn [[k task]] (not (:deleted? task))))
          (sort-by first)
-         (map (fn [[k task]] [k (div {} (comp-task k task))])))))
+         (map (fn [[k task]] [k (div {} (cursor-> k comp-task states k task))])))))
   (=< nil 80)
   (let [deleted-plans (->> plan (filter (fn [[k task]] (:deleted? task))) (sort-by first))]
     (if (not (empty? deleted-plans))
