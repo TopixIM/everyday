@@ -55,7 +55,7 @@
       (if (:logged-in? store)
         (case (:name router)
           :home (comp-today (:date session) (:plan router-data) (:operations router-data))
-          :plan (comp-plan router-data)
+          :plan (comp-plan states router-data)
           :profile (comp-profile (:user store) router-data)
           :history (comp-history (:plan router-data) (:days router-data))
           (<> router))
