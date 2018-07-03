@@ -8040,11 +8040,44 @@
        "T" {:type :leaf, :by "root", :at 1521911286581, :text "def", :id "SkZ2x8-45f"}
        "j" {:type :leaf, :by "root", :at 1521911283590, :text "dev?", :id "SJzhl8WEcf"}
        "r" {
-        :type :expr, :by "root", :at 1521911342471, :id "Hyl84LZVqz"
+        :type :expr, :by "root", :at 1530639267991, :id "Hkni74KGm"
         :data {
-         "D" {:type :leaf, :by "root", :at 1521911343096, :text "do", :id "SkvVLZE5G"}
-         "L" {:type :leaf, :by "root", :at 1521911350882, :text "^boolean", :id "Byec48W4cM"}
-         "T" {:type :leaf, :by "root", :at 1521911316901, :text "js/goog.DEBUG", :id "BJXyZUWV5G"}
+         "D" {:type :leaf, :by "root", :at 1530639268518, :text "if", :id "B1g2jmVtzX"}
+         "L" {
+          :type :expr, :by "root", :at 1530639268754, :id "Sy-To74YMX"
+          :data {
+           "T" {:type :leaf, :by "root", :at 1530639272596, :text "exists?", :id "Hy-AsXVFM7"}
+           "j" {:type :leaf, :by "root", :at 1530639275575, :text "js/window", :id "r1f3XVtMQ"}
+          }
+         }
+         "T" {
+          :type :expr, :by "root", :at 1521911342471, :id "Hyl84LZVqz"
+          :data {
+           "D" {:type :leaf, :by "root", :at 1521911343096, :text "do", :id "SkvVLZE5G"}
+           "L" {:type :leaf, :by "root", :at 1521911350882, :text "^boolean", :id "Byec48W4cM"}
+           "T" {:type :leaf, :by "root", :at 1521911316901, :text "js/goog.DEBUG", :id "BJXyZUWV5G"}
+          }
+         }
+         "j" {
+          :type :expr, :by "root", :at 1530639276571, :id "B1HhX4YGm"
+          :data {
+           "T" {:type :leaf, :by "root", :at 1530639280093, :text "=", :id "B1HhX4YGmleaf"}
+           "j" {:type :leaf, :by "root", :at 1530639282865, :text "\"dev", :id "rJW5nmNtfm"}
+           "r" {
+            :type :expr, :by "root", :at 1530639283670, :id "SJh3XEFGm"
+            :data {
+             "T" {:type :leaf, :by "root", :at 1530639285034, :text ".-env", :id "SymsnmNYzX"}
+             "j" {
+              :type :expr, :by "root", :at 1530639286198, :id "ByZ0nQEFfm"
+              :data {
+               "T" {:type :leaf, :by "root", :at 1530639287069, :text ".-env", :id "rJmp3QNKfQ"}
+               "j" {:type :leaf, :by "root", :at 1530639290028, :text "js/process", :id "HyXy6QEKfm"}
+              }
+             }
+            }
+           }
+          }
+         }
         }
        }
       }
