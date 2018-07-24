@@ -63,7 +63,7 @@
  comp-plan
  (states plan)
  (div
-  {:style (merge {:padding 16, :overflow :auto, :padding-bottom 200})}
+  {:style {}}
   (div
    {}
    (div

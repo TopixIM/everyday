@@ -29,14 +29,16 @@
             :font-weight 100,
             :flex-shrink 0})}
   (div
-   {:style ui/row}
-   (comp-entry :home "Daily" (= :home (:name router)))
-   (=< 16 nil)
-   (comp-entry :plan "Plan" (= :plan (:name router)))
-   (=< 16 nil)
-   (comp-entry :history "History" (= :history (:name router))))
-  (div
-   {:style {:cursor "pointer"}, :on-click (action-> :router/change {:name :profile})}
-   (<> (if logged-in? "Me" "Guest"))
-   (=< 8 nil)
-   (<> count-members))))
+   {:style (merge ui/row-parted {:width 480, :margin :auto})}
+   (div
+    {:style ui/row}
+    (comp-entry :home "Daily" (= :home (:name router)))
+    (=< 16 nil)
+    (comp-entry :plan "Plan" (= :plan (:name router)))
+    (=< 16 nil)
+    (comp-entry :history "History" (= :history (:name router))))
+   (div
+    {:style {:cursor "pointer"}, :on-click (action-> :router/change {:name :profile})}
+    (<> (if logged-in? "Me" "Guest"))
+    (=< 8 nil)
+    (<> count-members)))))

@@ -52,14 +52,19 @@
      (div
       {:style (merge ui/global ui/fullscreen ui/column)}
       (comp-navigation (:logged-in? store) (:count store) (:router session))
-      (if (:logged-in? store)
-        (case (:name router)
-          :home (comp-today (:date session) (:plan router-data) (:operations router-data))
-          :plan (comp-plan states router-data)
-          :profile (comp-profile (:user store) router-data)
-          :history (comp-history (:plan router-data) (:days router-data))
-          (<> router))
-        (comp-login states))
+      (div
+       {:style (merge
+                ui/flex
+                ui/column
+                {:overflow :auto, :align-items :center, :padding 16, :padding-bottom 200})}
+       (if (:logged-in? store)
+         (case (:name router)
+           :home (comp-today (:date session) (:plan router-data) (:operations router-data))
+           :plan (comp-plan states router-data)
+           :profile (comp-profile (:user store) router-data)
+           :history (comp-history (:plan router-data) (:days router-data))
+           (<> router))
+         (comp-login states)))
       (comp-status-color (:color store))
       (when dev? (comp-inspect "Store" store {:bottom 0, :left 0, :max-width "100%"}))
       (comp-msg-list (get-in store [:session :notifications]) :session/remove-notification)

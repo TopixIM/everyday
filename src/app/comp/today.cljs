@@ -41,24 +41,31 @@
                            (let [operation (get operations (:id task) schema/operation)]
                              (and (not (:deleted? task)) (:done? operation))))))]
     (div
-     {:style ui/row}
+     {:style ui/column}
+     (div
+      {:style {:width 360}}
+      (div {:style style/title} (<> "Done"))
+      (if (empty? done-tasks)
+        (<>
+         "Nothing."
+         {:margin-left 8,
+          :margin-bottom 16,
+          :font-family ui/font-fancy,
+          :color (hsl 0 0 60)})
+        (list->
+         {}
+         (->> done-tasks
+              (map
+               (fn [[sort-id task]]
+                 [sort-id
+                  (let [operation (get operations (:id task) schema/operation)]
+                    (comp-task task operation))]))))))
      (div
       {:style {:width 360}}
       (div {:style style/title} (<> "Todo"))
       (list->
        {}
        (->> todo-tasks
-            (map
-             (fn [[sort-id task]]
-               [sort-id
-                (let [operation (get operations (:id task) schema/operation)]
-                  (comp-task task operation))])))))
-     (div
-      {:style {:width 360}}
-      (div {:style style/title} (<> "Done"))
-      (list->
-       {}
-       (->> done-tasks
             (map
              (fn [[sort-id task]]
                [sort-id
