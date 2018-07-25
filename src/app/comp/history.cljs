@@ -33,7 +33,7 @@
  comp-history
  (plan days)
  (div
-  {:style (merge ui/column ui/flex {:overflow :auto})}
+  {:style (merge ui/column)}
   (div {:style (merge style/title {:padding 16})} (<> "History"))
   (list->
    {:style (merge ui/flex {:padding-bottom 160})}
