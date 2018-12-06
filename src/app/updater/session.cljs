@@ -9,8 +9,5 @@
 
 (defn local-date [db op-data sid op-id op-time] (assoc-in db [:sessions sid :date] op-data))
 
-(defn remove-notification [db op-data sid op-id op-time]
-  (update-in
-   db
-   [:sessions sid :notifications]
-   (fn [notifications] (subvec notifications 0 op-data))))
+(defn remove-message [db op-data sid op-id op-time]
+  (update-in db [:sessions sid :messages] (fn [messages] (dissoc messages (:id op-data)))))

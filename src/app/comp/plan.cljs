@@ -1,6 +1,6 @@
 
 (ns app.comp.plan
-  (:require [respo.macros :refer [defcomp <> div list-> action-> cursor-> input button span]]
+  (:require [respo.core :refer [defcomp <> div list-> action-> cursor-> input button span]]
             [respo.comp.space :refer [=<]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo-ui.core :as ui]
@@ -45,9 +45,7 @@
     :update-prompt
     comp-prompt
     states
-    (comp-icon "compose")
-    "New task:"
-    (:text task)
+    {:trigger (comp-icon "compose"), :text "New task:", :initial (:text task)}
     (fn [result d! m!]
       (when (not (string/blank? result)) (d! :plan/update-text {:id sort-id, :text result}))))
    (=< 16 nil)
@@ -55,8 +53,7 @@
     :confirm
     comp-confirm
     states
-    (comp-icon "ios-trash")
-    "Sure to remove?"
+    {:trigger (comp-icon "ios-trash"), :text "Sure to remove?"}
     (fn [sure? d! m!] (when sure? (d! :plan/remove-one sort-id)))))))
 
 (defcomp
@@ -74,9 +71,11 @@
      :create-prompt
      comp-prompt
      states
-     (button {:style (merge ui/button {:height 32, :vertical-align :middle})} (<> "Add"))
-     "A task:"
-     ""
+     {:trigger (button
+                {:style (merge ui/button {:height 32, :vertical-align :middle})}
+                (<> "Add")),
+      :text "A task:",
+      :initial ""}
      (fn [text d! m!] (when (not (string/blank? text)) (d! :plan/create text)))))
    (list->
     {:style (merge)}

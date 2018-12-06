@@ -1,6 +1,6 @@
 
 (ns app.comp.today
-  (:require [respo.macros :refer [defcomp <> action-> list-> div input button span]]
+  (:require [respo.core :refer [defcomp <> action-> list-> div input button span]]
             [respo.comp.space :refer [=<]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo-ui.core :as ui]

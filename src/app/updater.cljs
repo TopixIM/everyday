@@ -13,7 +13,7 @@
             :user/log-in user/log-in
             :user/sign-up user/sign-up
             :user/log-out user/log-out
-            :session/remove-notification session/remove-notification
+            :session/remove-message session/remove-message
             :session/local-date session/local-date
             :router/change router/change
             :plan/create plan/create
