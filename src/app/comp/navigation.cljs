@@ -31,7 +31,7 @@
    {:style (merge ui/row-parted {:width 480, :margin :auto})}
    (div
     {:style ui/row}
-    (comp-entry :home "Daily" (= :home (:name router)))
+    (comp-entry :home "Everyday" (= :home (:name router)))
     (=< 16 nil)
     (comp-entry :plan "Plan" (= :plan (:name router)))
     (=< 16 nil)

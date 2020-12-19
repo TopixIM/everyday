@@ -2731,11 +2731,11 @@
                   |yr $ {} (:type :expr) (:by |B1y7Rc-Zz) (:at 1608356049661)
                     :data $ {}
                       |T $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608356049661) (:text |:storage-key)
-                      |j $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608357604666) (:text "|\"daily")
+                      |j $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608360867855) (:text "|\"everyday")
                   |yT $ {} (:type :expr) (:by |B1y7Rc-Zz) (:at 1608356049661)
                     :data $ {}
                       |T $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608356049661) (:text |:cdn-url)
-                      |j $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608357601303) (:text "|\"http://cdn.tiye.me/daily/")
+                      |j $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608360871946) (:text "|\"http://cdn.tiye.me/everyday/")
                   |j $ {} (:type :expr) (:by |B1y7Rc-Zz) (:at 1608356049661)
                     :data $ {}
                       |T $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608356049661) (:text |:port)
@@ -2755,7 +2755,7 @@
                   |r $ {} (:type :expr) (:by |B1y7Rc-Zz) (:at 1608356049661)
                     :data $ {}
                       |T $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608356049661) (:text |:title)
-                      |j $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608357585902) (:text "|\"Daily")
+                      |j $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608360864660) (:text "|\"Everyday")
                   |y $ {} (:type :expr) (:by |B1y7Rc-Zz) (:at 1608356049661)
                     :data $ {}
                       |T $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608356049661) (:text |:release-ui)
@@ -3569,7 +3569,7 @@
                             :data $ {}
                               |T $ {} (:type :leaf) (:by |root) (:at 1525507845105) (:text |comp-entry) (:id |rypgpZD1iaz)
                               |j $ {} (:type :leaf) (:by |root) (:at 1525507866992) (:text |:home) (:id |rJ-QPJiTM)
-                              |r $ {} (:type :leaf) (:by |root) (:at 1525507869491) (:text "|\"Daily") (:id |SJrQQvkjaz)
+                              |r $ {} (:type :leaf) (:by |B1y7Rc-Zz) (:at 1608360846201) (:text "|\"Everyday") (:id |SJrQQvkjaz)
                               |v $ {} (:type :expr) (:by |root) (:at 1525507937686) (:id |Bycwwkjpz)
                                 :data $ {}
                                   |T $ {} (:type :leaf) (:by |root) (:at 1525507938232) (:text |=) (:id |ryFvv1opM)

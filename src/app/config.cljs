@@ -18,11 +18,11 @@
 
 (def site
   {:port 11007,
-   :title "Daily",
+   :title "Everyday",
    :icon "http://cdn.tiye.me/logo/topixim.png",
    :dev-ui "http://localhost:8100/main.css",
    :release-ui "http://cdn.tiye.me/favored-fonts/main.css",
-   :cdn-url "http://cdn.tiye.me/daily/",
+   :cdn-url "http://cdn.tiye.me/everyday/",
    :theme "#eeeeff",
-   :storage-key "daily",
+   :storage-key "everyday",
    :storage-file "storage.edn"})
