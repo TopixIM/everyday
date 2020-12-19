@@ -10,7 +10,8 @@
             [recollect.patch :refer [patch-twig]]
             [cumulo-util.core :refer [on-page-touch]]
             ["url-parse" :as url-parse]
-            [applied-science.js-interop :as j])
+            [applied-science.js-interop :as j]
+            [app.util :refer [get-date]])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
 (declare dispatch!)
@@ -42,7 +43,7 @@
         port (or (j/get-in url-obj [:query :port]) (:port config/site))]
     (ws-connect!
      (<< "ws://~{host}:~{port}")
-     {:on-open (fn [] (simulate-login!)),
+     {:on-open (fn [] (simulate-login!) (dispatch! :session/local-date (get-date))),
       :on-close (fn [event] (reset! *store nil) (js/console.error "Lost connection!")),
       :on-data (fn [data]
         (case (:kind data)

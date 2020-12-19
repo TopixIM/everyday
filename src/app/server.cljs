@@ -13,7 +13,8 @@
             [recollect.diff :refer [diff-twig]]
             [ws-edn.server :refer [wss-serve! wss-send! wss-each!]]
             [favored-edn.core :refer [write-edn]]
-            [recollect.twig :refer [new-twig-loop! clear-twig-caches!]])
+            [recollect.twig :refer [new-twig-loop! clear-twig-caches!]]
+            [app.util :refer [get-date]])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
 (defonce *client-caches (atom {}))
@@ -43,6 +44,7 @@
     (try
      (cond
        (= op :effect/persist) (persist-db!)
+       (= op :effect/refresh-date) (dispatch! :date/refresh (get-date) sid)
        :else (reset! *reel (reel-reducer @*reel updater op op-data sid op-id op-time)))
      (catch js/Error error (js/console.error error)))))
 
