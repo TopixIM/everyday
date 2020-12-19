@@ -2,8 +2,7 @@
 (ns app.comp.container
   (:require [hsl.core :refer [hsl]]
             [respo-ui.core :as ui]
-            [respo-ui.colors :as colors]
-            [respo.core :refer [defcomp <> div span action-> button]]
+            [respo.core :refer [defcomp <> div span button]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo.comp.space :refer [=<]]
             [app.comp.navigation :refer [comp-navigation]]
@@ -11,7 +10,7 @@
             [app.comp.login :refer [comp-login]]
             [respo-message.comp.messages :refer [comp-messages]]
             [cumulo-reel.comp.reel :refer [comp-reel]]
-            [app.schema :refer [dev?]]
+            [app.config :refer [dev?]]
             [app.comp.plan :refer [comp-plan]]
             [app.comp.today :refer [comp-today]]
             [app.comp.history :refer [comp-history]]))
@@ -22,7 +21,7 @@
  (div
   {:style (merge ui/global ui/fullscreen ui/center)}
   (span
-   {:style {:cursor :pointer}, :on-click (action-> :effect/connect nil)}
+   {:style {:cursor :pointer}, :on-click (fn [e d!] (d! :effect/connect nil))}
    (<>
     "Socket broken! Click to retry."
     {:font-family ui/font-fancy, :font-weight 100, :font-size 32}))))
