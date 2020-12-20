@@ -9,7 +9,7 @@
             [clojure.string :as string]
             [hsl.core :refer [hsl]]
             [respo-alerts.core :refer [comp-confirm comp-prompt]]
-            [feather.core :refer [comp-i]]))
+            [feather.core :refer [comp-i comp-icon]]))
 
 (defcomp
  comp-deleted-task
@@ -49,40 +49,54 @@
    (=< 16 nil)
    (comp-confirm
     (>> states :confirm)
-    {:trigger (comp-i :trash 14 (hsl 200 80 70)), :text "Sure to remove?"}
+    {:trigger (comp-i :eye-off 14 (hsl 200 80 70)),
+     :text "Sure to remove from everyday task?"}
     (fn [sure? d! m!] (when sure? (d! :plan/remove-one sort-id)))))))
 
 (defcomp
  comp-plan
  (states plan)
- (div
-  {:style {}}
-  (div
-   {}
+ (let [cursor (:cursor states), state (or (:data states) {:show-deprecated? true})]
    (div
-    {:style (merge ui/row style/title {})}
-    (<> "Plan")
-    (=< 16 nil)
-    (comp-prompt
-     (>> states :create-prompt)
-     {:trigger (button
-                {:style (merge ui/button {:height 32, :vertical-align :middle})}
-                (<> "Add")),
-      :text "A task:",
-      :initial ""}
-     (fn [text d! m!] (when (not (string/blank? text)) (d! :plan/create text)))))
-   (list->
-    {:style (merge)}
-    (->> plan
-         (filter (fn [[k task]] (not (:deleted? task))))
-         (sort-by first)
-         (map (fn [[k task]] [k (div {} (comp-task (>> states k) k task))])))))
-  (=< nil 80)
-  (let [deleted-plans (->> plan (filter (fn [[k task]] (:deleted? task))) (sort-by first))]
-    (if (not (empty? deleted-plans))
-      (div
-       {}
-       (div {:style (merge style/title {:color (hsl 0 0 70)})} (<> "Deleted"))
-       (list->
-        {:style (merge)}
-        (->> deleted-plans (map (fn [[k task]] [k (div {} (comp-deleted-task k task))])))))))))
+    {:style {}}
+    (div
+     {}
+     (div
+      {:style (merge ui/row style/title {})}
+      (<> "Plan")
+      (=< 16 nil)
+      (comp-prompt
+       (>> states :create-prompt)
+       {:trigger (button
+                  {:style (merge ui/button {:height 32, :vertical-align :middle})}
+                  (<> "Add")),
+        :text "A task:",
+        :initial ""}
+       (fn [text d! m!] (when (not (string/blank? text)) (d! :plan/create text)))))
+     (list->
+      {:style (merge)}
+      (->> plan
+           (filter (fn [[k task]] (not (:deleted? task))))
+           (sort-by first)
+           (map (fn [[k task]] [k (div {} (comp-task (>> states k) k task))])))))
+    (=< nil 80)
+    (let [deleted-plans (->> plan (filter (fn [[k task]] (:deleted? task))) (sort-by first))]
+      (if (not (empty? deleted-plans))
+        (div
+         {}
+         (div
+          {:style (merge style/title {:color (hsl 0 0 70)})}
+          (<> "Deleted")
+          (=< 8 nil)
+          (comp-icon
+           :eye
+           {:font-size 14, :color (hsl 200 80 70), :cursor :pointer}
+           (fn [e d!] (d! cursor (update state :show-deprecated? not)))))
+         (if (:show-deprecated? state)
+           (list->
+            {:style (merge)}
+            (->> deleted-plans
+                 (map (fn [[k task]] [k (div {} (comp-deleted-task k task))]))))
+           (<>
+            (str "(" (count deleted-plans) ") tasks hidden.")
+            {:font-family ui/font-fancy, :color (hsl 0 0 50)}))))))))
