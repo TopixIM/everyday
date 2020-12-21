@@ -11,7 +11,7 @@
  comp-profile
  (user members)
  (div
-  {:style (merge ui/flex {:padding 16})}
+  {:style (merge ui/flex {:padding 16, :width "72%"})}
   (div
    {:style {:font-family ui/font-fancy, :font-size 32, :font-weight 100}}
    (<> (str "Hello! " (:name user))))

@@ -29,7 +29,7 @@
  (div
   {:style (merge
            ui/row-parted
-           {:width 320, :background-color (hsl 0 0 96), :margin "0 8px 8px 0", :padding 8}),
+           {:background-color (hsl 0 0 96), :margin "0 8px 8px 0", :padding 8}),
    :draggable true,
    :on-dragstart (fn [e d! m!] (.. (:event e) -dataTransfer (setData "text/plain" sort-id))),
    :on-dragover (fn [e d! m!]
@@ -56,9 +56,9 @@
 (defcomp
  comp-plan
  (states plan)
- (let [cursor (:cursor states), state (or (:data states) {:show-deprecated? true})]
+ (let [cursor (:cursor states), state (or (:data states) {:show-deprecated? false})]
    (div
-    {:style {}}
+    {:style {:width "72%"}}
     (div
      {}
      (div
@@ -98,5 +98,5 @@
             (->> deleted-plans
                  (map (fn [[k task]] [k (div {} (comp-deleted-task k task))]))))
            (<>
-            (str "(" (count deleted-plans) ") tasks hidden.")
+            (str "(" (count deleted-plans) ") tasks deprecated.")
             {:font-family ui/font-fancy, :color (hsl 0 0 50)}))))))))
