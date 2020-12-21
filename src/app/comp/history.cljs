@@ -12,7 +12,7 @@
  comp-records
  (plan date operations)
  (div
-  {:style {:padding 16}}
+  {:style {:padding "8px 0"}}
   (div {} (<> date))
   (list->
    {:style {:padding-left 16}}
@@ -33,8 +33,8 @@
  comp-history
  (plan days)
  (div
-  {:style (merge ui/column)}
-  (div {:style (merge style/title {:padding 16})} (<> "History"))
+  {:style (merge ui/column {:width "72%"})}
+  (div {:style (merge style/title {})} (<> "History"))
   (list->
    {:style (merge ui/flex {:padding-bottom 160})}
    (->> days
