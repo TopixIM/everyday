@@ -1,6 +1,6 @@
 
 (ns app.comp.today
-  (:require [respo.core :refer [defcomp <> action-> list-> div input button span]]
+  (:require [respo.core :refer [defcomp <> list-> div input button span]]
             [respo.comp.space :refer [=<]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo-ui.core :as ui]
@@ -20,7 +20,7 @@
             :height 32,
             :background-color (if (:done? operation) (hsl 200 80 80) (hsl 0 0 90)),
             :cursor :pointer},
-    :on-click (action-> :operation/toggle-task (:id task))})
+    :on-click (fn [e d!] (d! :operation/toggle-task (:id task)))})
   (=< 8 nil)
   (<> (:text task))))
 

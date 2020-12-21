@@ -1,6 +1,6 @@
 
 (ns app.comp.plan
-  (:require [respo.core :refer [defcomp <> div list-> action-> cursor-> input button span]]
+  (:require [respo.core :refer [defcomp <> div list-> >> input button span]]
             [respo.comp.space :refer [=<]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo-ui.core :as ui]
@@ -8,8 +8,8 @@
             [app.style :as style]
             [clojure.string :as string]
             [hsl.core :refer [hsl]]
-            [respo-ui.comp.icon :refer [comp-icon]]
-            [respo-alerts.comp.alerts :refer [comp-confirm comp-prompt]]))
+            [respo-alerts.core :refer [comp-confirm comp-prompt]]
+            [feather.core :refer [comp-i comp-icon]]))
 
 (defcomp
  comp-deleted-task
@@ -20,8 +20,8 @@
            {:width 320, :background-color (hsl 0 0 96), :margin-bottom 8, :padding 8})}
   (div {:style ui/flex} (<> (:text task)))
   (span
-   {:on-click (action-> :plan/reuse sort-key), :style {:cursor :pointer}}
-   (comp-icon :contrast))))
+   {:on-click (fn [e d!] (d! :plan/reuse sort-key)), :style {:cursor :pointer}}
+   (comp-i :shuffle 14 (hsl 200 80 70)))))
 
 (defcomp
  comp-task
@@ -41,54 +41,62 @@
   (<> (:text task))
   (div
    {:style ui/row}
-   (cursor->
-    :update-prompt
-    comp-prompt
-    states
-    {:trigger (comp-icon "compose"), :text "New task:", :initial (:text task)}
+   (comp-prompt
+    (>> states :update-prompt)
+    {:trigger (comp-i :edit 14 (hsl 200 80 70)), :text "New task:", :initial (:text task)}
     (fn [result d! m!]
       (when (not (string/blank? result)) (d! :plan/update-text {:id sort-id, :text result}))))
    (=< 16 nil)
-   (cursor->
-    :confirm
-    comp-confirm
-    states
-    {:trigger (comp-icon "ios-trash"), :text "Sure to remove?"}
+   (comp-confirm
+    (>> states :confirm)
+    {:trigger (comp-i :eye-off 14 (hsl 200 80 70)),
+     :text "Sure to remove from everyday task?"}
     (fn [sure? d! m!] (when sure? (d! :plan/remove-one sort-id)))))))
 
 (defcomp
  comp-plan
  (states plan)
- (div
-  {:style {}}
-  (div
-   {}
+ (let [cursor (:cursor states), state (or (:data states) {:show-deprecated? true})]
    (div
-    {:style (merge ui/row style/title {})}
-    (<> "Plan")
-    (=< 16 nil)
-    (cursor->
-     :create-prompt
-     comp-prompt
-     states
-     {:trigger (button
-                {:style (merge ui/button {:height 32, :vertical-align :middle})}
-                (<> "Add")),
-      :text "A task:",
-      :initial ""}
-     (fn [text d! m!] (when (not (string/blank? text)) (d! :plan/create text)))))
-   (list->
-    {:style (merge)}
-    (->> plan
-         (filter (fn [[k task]] (not (:deleted? task))))
-         (sort-by first)
-         (map (fn [[k task]] [k (div {} (cursor-> k comp-task states k task))])))))
-  (=< nil 80)
-  (let [deleted-plans (->> plan (filter (fn [[k task]] (:deleted? task))) (sort-by first))]
-    (if (not (empty? deleted-plans))
-      (div
-       {}
-       (div {:style (merge style/title {:color (hsl 0 0 70)})} (<> "Deleted"))
-       (list->
-        {:style (merge)}
-        (->> deleted-plans (map (fn [[k task]] [k (div {} (comp-deleted-task k task))])))))))))
+    {:style {}}
+    (div
+     {}
+     (div
+      {:style (merge ui/row style/title {})}
+      (<> "Plan")
+      (=< 16 nil)
+      (comp-prompt
+       (>> states :create-prompt)
+       {:trigger (button
+                  {:style (merge ui/button {:height 32, :vertical-align :middle})}
+                  (<> "Add")),
+        :text "A task:",
+        :initial ""}
+       (fn [text d! m!] (when (not (string/blank? text)) (d! :plan/create text)))))
+     (list->
+      {:style (merge)}
+      (->> plan
+           (filter (fn [[k task]] (not (:deleted? task))))
+           (sort-by first)
+           (map (fn [[k task]] [k (div {} (comp-task (>> states k) k task))])))))
+    (=< nil 80)
+    (let [deleted-plans (->> plan (filter (fn [[k task]] (:deleted? task))) (sort-by first))]
+      (if (not (empty? deleted-plans))
+        (div
+         {}
+         (div
+          {:style (merge style/title {:color (hsl 0 0 70)})}
+          (<> "Deleted")
+          (=< 8 nil)
+          (comp-icon
+           :eye
+           {:font-size 14, :color (hsl 200 80 70), :cursor :pointer}
+           (fn [e d!] (d! cursor (update state :show-deprecated? not)))))
+         (if (:show-deprecated? state)
+           (list->
+            {:style (merge)}
+            (->> deleted-plans
+                 (map (fn [[k task]] [k (div {} (comp-deleted-task k task))]))))
+           (<>
+            (str "(" (count deleted-plans) ") tasks hidden.")
+            {:font-family ui/font-fancy, :color (hsl 0 0 50)}))))))))

@@ -2,15 +2,14 @@
 (ns app.comp.navigation
   (:require [hsl.core :refer [hsl]]
             [respo-ui.core :as ui]
-            [respo-ui.colors :as colors]
             [respo.comp.space :refer [=<]]
-            [respo.core :refer [defcomp <> action-> span div]]))
+            [respo.core :refer [defcomp <> span div]]))
 
 (defcomp
  comp-entry
  (page title focused?)
  (div
-  {:on-click (action-> :router/change {:name page}),
+  {:on-click (fn [e d!] (d! :router/change {:name page})),
    :style (merge {:cursor :pointer} (when focused? {:font-weight 500}))}
   (<> title)))
 
@@ -32,13 +31,13 @@
    {:style (merge ui/row-parted {:width 480, :margin :auto})}
    (div
     {:style ui/row}
-    (comp-entry :home "Daily" (= :home (:name router)))
+    (comp-entry :home "Everyday" (= :home (:name router)))
     (=< 16 nil)
     (comp-entry :plan "Plan" (= :plan (:name router)))
     (=< 16 nil)
     (comp-entry :history "History" (= :history (:name router))))
    (div
-    {:style {:cursor "pointer"}, :on-click (action-> :router/change {:name :profile})}
+    {:style {:cursor "pointer"}, :on-click (fn [e d!] (d! :router/change {:name :profile}))}
     (<> (if logged-in? "Me" "Guest"))
     (=< 8 nil)
     (<> count-members)))))
