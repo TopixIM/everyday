@@ -17,7 +17,7 @@
  (div
   {:style (merge
            ui/row-parted
-           {:width 320, :background-color (hsl 0 0 96), :margin-bottom 8, :padding 8})}
+           {:background-color (hsl 0 0 96), :margin-bottom 8, :padding 8})}
   (div {:style ui/flex} (<> (:text task)))
   (span
    {:on-click (fn [e d!] (d! :plan/reuse sort-key)), :style {:cursor :pointer}}
@@ -58,7 +58,7 @@
  (states plan)
  (let [cursor (:cursor states), state (or (:data states) {:show-deprecated? false})]
    (div
-    {:style {:width "72%"}}
+    {:style {:width "60%"}}
     (div
      {}
      (div

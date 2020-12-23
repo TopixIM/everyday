@@ -33,7 +33,7 @@
  comp-history
  (plan days)
  (div
-  {:style (merge ui/column {:width "72%"})}
+  {:style (merge ui/column {:width "60%"})}
   (div {:style (merge style/title {})} (<> "History"))
   (list->
    {:style (merge ui/flex {:padding-bottom 160})}

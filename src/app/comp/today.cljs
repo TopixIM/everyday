@@ -26,7 +26,7 @@
  comp-today
  (date plan operations)
  (div
-  {:style {:width "72%"}}
+  {:style {:width "60%"}}
   (div {:style style/title} (<> (str "Today(" date ")")))
   (let [todo-tasks (->> plan
                         (filter
@@ -52,7 +52,7 @@
                 (let [operation (get operations (:id task) schema/operation)]
                   (comp-task task operation))])))))
      (div
-      {:style {:width 360}}
+      {:style {}}
       (div {:style style/title} (<> "Done"))
       (if (empty? done-tasks)
         (<>

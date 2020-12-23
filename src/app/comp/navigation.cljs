@@ -28,7 +28,7 @@
             :font-weight 100,
             :flex-shrink 0})}
   (div
-   {:style (merge ui/row-parted {:width "80%", :margin :auto})}
+   {:style (merge ui/row-parted {:width "72%", :margin :auto})}
    (div
     {:style ui/row}
     (comp-entry :home "Everyday" (= :home (:name router)))
