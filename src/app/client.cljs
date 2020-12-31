@@ -11,7 +11,7 @@
             [cumulo-util.core :refer [on-page-touch]]
             ["url-parse" :as url-parse]
             [applied-science.js-interop :as j]
-            [app.util :refer [get-date]])
+            [app.util :refer [get-shifted-date]])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
 (declare dispatch!)
@@ -43,7 +43,7 @@
         port (or (j/get-in url-obj [:query :port]) (:port config/site))]
     (ws-connect!
      (<< "ws://~{host}:~{port}")
-     {:on-open (fn [] (simulate-login!) (dispatch! :session/local-date (get-date))),
+     {:on-open (fn [] (simulate-login!) (dispatch! :session/local-date (get-shifted-date))),
       :on-close (fn [event] (reset! *store nil) (js/console.error "Lost connection!")),
       :on-data (fn [data]
         (case (:kind data)
