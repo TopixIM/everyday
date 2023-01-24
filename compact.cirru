@@ -615,7 +615,7 @@
         |dev? $ quote
           def dev? $ = "\"dev" (get-env "\"mode" "\"release")
         |site $ quote
-          def site $ {} (:port 11007) (:title "\"Everyday") (:icon "\"http://cdn.tiye.me/logo/topix.png") (:dev-ui "\"http://localhost:8100/main.css") (:release-ui "\"http://cdn.tiye.me/favored-fonts/main.css") (:cdn-url "\"http://cdn.tiye.me/everyday/") (:theme "\"#eeeeff") (:storage-key "\"everyday") (:storage-file "\"storage.edn")
+          def site $ {} (:port 11007) (:title "\"Everyday") (:icon "\"http://cdn.tiye.me/logo/topix.png") (:dev-ui "\"http://localhost:8100/main.css") (:release-ui "\"http://cdn.tiye.me/favored-fonts/main.css") (:cdn-url "\"http://cdn.tiye.me/everyday/") (:theme "\"#eeeeff") (:storage-key "\"everyday") (:storage-file "\"storage.cirru")
       :ns $ quote (ns app.config)
     |app.schema $ {}
       :defs $ {}
