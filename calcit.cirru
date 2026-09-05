@@ -26,9 +26,15 @@
         'connect! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn connect! () $ let
-                url-obj $ url-parse js/location.href true
-                host $ either (-> url-obj .-query .-host) js/location.hostname
-                port $ either (-> url-obj .-query .-port) (:port config/site)
+                location $ unsafe-coerce js/location JsObject
+                url-obj $ unsafe-coerce
+                  url-parse (.-href location) true
+                  , JsObject
+                query $ unsafe-coerce (.-query url-obj) JsObject
+                raw-host $ .-host query
+                raw-port $ .-port query
+                host $ if (js-present? raw-host) (unsafe-coerce raw-host String) (.-hostname location)
+                port $ if (js-present? raw-port) (unsafe-coerce raw-port String) (&map:get config/site :port)
               ws-connect! (str |ws:// host |: port)
                 {}
                   :on-open $ fn (event)
@@ -46,7 +52,8 @@
                 println |Dispatch op op-data
               case-default op
                 ws-send! $ {} (:kind :op) (:op op) (:data op-data)
-                :states $ reset! *states (update-states @*states op-data)
+                :states $ let[] (cursor s) op-data
+                  reset! *states $ update-states @*states cursor s
                 :effect/connect $ connect!
           :examples $ []
           :schema $ :: 'Dynamic
@@ -71,9 +78,9 @@
         'on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-server-data (data)
-              case-default (:kind data) (println "|unknown server data kind:" data)
+              case-default (&map:get data :kind) (println "|unknown server data kind:" data)
                 :patch $ let
-                    changes $ :data data
+                    changes $ &map:get data :data
                   when config/dev? $ js/console.log |Changes (to-js-data changes)
                   reset! *store $ patch-twig @*store changes
           :examples $ []
@@ -99,10 +106,10 @@
         'simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn simulate-login! () $ let
-                raw $ .!getItem js/localStorage (:storage-key config/site)
-              if (some? raw)
+                raw $ js/localStorage.getItem (&map:get config/site :storage-key)
+              if (js-present? raw)
                 do (println "|Found storage.")
-                  dispatch! :user/log-in $ parse-cirru-edn raw
+                  dispatch! :user/log-in $ parse-cirru-edn (unsafe-coerce raw String)
                 do $ println "|Found no storage."
           :examples $ []
           :schema $ :: 'Dynamic
