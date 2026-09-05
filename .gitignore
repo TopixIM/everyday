@@ -4,6 +4,8 @@
 
 js-out/
 node_modules/
+.calcit/
+.yarn/*.gz
 dist/
 out-page/
 
