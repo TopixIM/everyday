@@ -99,7 +99,7 @@
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn render-app! () $ render! mount-target
-              comp-container (:states @*states) @*store
+              comp-container (&map:get @*states :states) @*store
               , dispatch!
           :examples $ []
           :schema $ :: 'Dynamic
@@ -135,33 +135,46 @@
           :code $ quote
             defcomp comp-container (states store)
               let
-                  state $ :data states
-                  session $ :session store
-                  router $ :router store
-                  router-data $ :data router
+                  session $ unsafe-coerce (&map:get store :session) 'Map
+                  router $ unsafe-coerce (&map:get store :router) 'Map
+                  router-data $ unsafe-coerce (&map:get router :data) 'Map
                 if (nil? store) (comp-offline)
                   div
-                    {} $ :style (merge ui/global ui/fullscreen ui/column)
-                    comp-navigation (:logged-in? store) (:count store) (:router session)
+                    {} $ :style
+                      merge
+                        unsafe-coerce ui/global $ :: 'Map 'Tag 'Dynamic
+                        unsafe-coerce ui/fullscreen $ :: 'Map 'Tag 'Dynamic
+                        unsafe-coerce ui/column $ :: 'Map 'Tag 'Dynamic
+                    comp-navigation (&map:get store :logged-in?) (&map:get store :count) (&map:get session :router)
                     div
                       {} $ :style
-                        merge ui/flex ui/column $ {} (:overflow :auto) (:align-items :center) (:padding 16) (:padding-bottom 200)
-                      if (:logged-in? store)
-                        case-default (:name router) (<> router)
-                          :home $ comp-today (:date session) (:plan router-data)
-                            or (:operations router-data) ({})
+                        merge
+                          unsafe-coerce ui/flex $ :: 'Map 'Tag 'Dynamic
+                          unsafe-coerce ui/column $ :: 'Map 'Tag 'Dynamic
+                          unsafe-coerce
+                            {} (:overflow :auto) (:align-items :center) (:padding 16) (:padding-bottom 200)
+                            :: 'Map 'Tag 'Dynamic
+                      if (&map:get store :logged-in?)
+                        case-default (&map:get router :name)
+                          <> $ str router
+                          :home $ comp-today (&map:get session :date) (&map:get router-data :plan)
+                            or (&map:get router-data :operations) ({})
                           :plan $ comp-plan states router-data
-                          :profile $ comp-profile (:user store) router-data
-                          :history $ comp-history (:plan router-data) (:days router-data)
+                          :profile $ comp-profile (&map:get store :user) router-data
+                          :history $ comp-history (&map:get router-data :plan) (&map:get router-data :days)
                         comp-login states
-                    comp-status-color $ :color store
+                    comp-status-color $ &map:get store :color
                     when dev? $ comp-inspect |Store store
                       {} (:bottom 0) (:left 0) (:max-width |100%)
                     comp-messages
-                      get-in store $ [] :session :messages
+                      unsafe-coerce
+                        option:unwrap-or
+                          get-in store $ [] :session :messages
+                          {}
+                        :: 'Map 'String 'Dynamic
                       {}
                       fn (info d!) (d! :session/remove-message info)
-                    when dev? $ comp-reel (:reel-length store) ({})
+                    when dev? $ comp-reel (&map:get store :reel-length) ({})
           :examples $ []
           :schema $ :: 'Dynamic
         'comp-offline $ %{} 'CodeEntry (:doc |)
@@ -223,7 +236,9 @@
                     or $ {}
                     .to-list
                     .sort $ fn (date-x date-y)
-                      &compare (first date-y) (first date-x)
+                      &compare
+                        option:unwrap-or (first date-y) |1970-01-01
+                        option:unwrap-or (first date-x) |1970-01-01
                     .map $ fn (pair)
                       let[] (date operations) pair $ [] date (comp-records plan date operations)
           :examples $ []
@@ -240,21 +255,23 @@
                     {} $ :padding-left 16
                   -> operations (.to-list)
                     map $ fn (pair)
-                      let-sugar
-                            [] task-id info
-                            , pair
+                      let[] (task-id info) pair $ let
                           task $ first
                             filter
                               -> plan (.to-list) (.map last)
                               fn (task)
-                                = task-id $ :id task
+                                = task-id $ &map:get (unsafe-coerce task 'Map) :id
                         [] task-id $ div ({})
-                          if
-                            and $ some? task
-                            <> (:text task)
-                              if (:done? info)
-                                {} $ :color (hsl 0 0 20)
-                                {} $ :color (hsl 0 0 80)
+                          if-let (found-task task)
+                            let
+                                task-map $ unsafe-coerce found-task 'Map
+                                info-map $ unsafe-coerce info 'Map
+                              <>
+                                option:unwrap-or (&map:get task-map :text) |
+                                if
+                                  option:unwrap-or (&map:get info-map :done?) false
+                                  {} $ :color (hsl 0 0 20)
+                                  {} $ :color (hsl 0 0 80)
                             <> task-id
           :examples $ []
           :schema $ :: 'Dynamic
@@ -274,37 +291,44 @@
           :code $ quote
             defcomp comp-login (states)
               let
-                  cursor $ :cursor states
-                  state $ or (:data states) initial-state
+                  cursor $ &map:get states :cursor
+                  state $ unsafe-coerce
+                    or (&map:get states :data) initial-state
+                    , 'Map
                 div
-                  {} $ :style (merge ui/flex ui/center)
+                  {} $ :style
+                    merge
+                      unsafe-coerce ui/flex $ :: 'Map 'Tag 'Dynamic
+                      unsafe-coerce ui/center $ :: 'Map 'Tag 'Dynamic
                   div ({})
                     div
                       {} $ :style ({})
                       div ({})
                         input $ {} (:placeholder |Username)
-                          :value $ :username state
+                          :value $ &map:get state :username
                           :style ui/input
                           :on-input $ fn (e d!)
-                            d! cursor $ assoc state :username (:value e)
+                            d! cursor $ assoc state :username
+                              &map:get (unsafe-coerce e 'Map) :value
                       =< nil 8
                       div ({})
                         input $ {} (:placeholder |Password)
-                          :value $ :password state
+                          :value $ &map:get state :password
                           :style ui/input
                           :on-input $ fn (e d!)
-                            d! cursor $ assoc state :password (:value e)
+                            d! cursor $ assoc state :password
+                              &map:get (unsafe-coerce e 'Map) :value
                     =< nil 8
                     div
                       {} $ :style
                         {} $ :text-align :right
                       span $ {} (:inner-text "|Sign up")
                         :style $ merge ui/link
-                        :on-click $ on-submit (:username state) (:password state) true
+                        :on-click $ on-submit (&map:get state :username) (&map:get state :password) true
                       =< 8 nil
                       span $ {} (:inner-text "|Log in")
                         :style $ merge ui/link
-                        :on-click $ on-submit (:username state) (:password state) false
+                        :on-click $ on-submit (&map:get state :username) (&map:get state :password) false
           :examples $ []
           :schema $ :: 'Dynamic
         'initial-state $ %{} 'CodeEntry (:doc |)
@@ -317,7 +341,7 @@
             defn on-submit (username password signup?)
               fn (e dispatch!)
                 dispatch! (if signup? :user/sign-up :user/log-in) ([] username password)
-                .setItem js/localStorage (:storage-key config/site)
+                .setItem js/localStorage (&map:get config/site :storage-key)
                   format-cirru-edn $ [] username password
           :examples $ []
           :schema $ :: 'Dynamic
@@ -340,8 +364,12 @@
                   :on-click $ fn (e d!)
                     d! :router/change $ {} (:name page)
                   :style $ merge
-                    {} $ :cursor :pointer
-                    when focused? $ {} (:font-weight 500)
+                    unsafe-coerce
+                      {} $ :cursor :pointer
+                      :: 'Map 'Tag 'Dynamic
+                    unsafe-coerce
+                      when focused? $ {} (:font-weight 500)
+                      :: 'Map 'Tag 'Dynamic
                 <> title
           :examples $ []
           :schema $ :: 'Dynamic
@@ -360,11 +388,11 @@
                     merge ui/row-parted $ {} (:width |72%) (:margin :auto)
                   div
                     {} $ :style ui/row
-                    comp-entry :home |Everyday $ = :home (:name router)
+                    comp-entry :home |Everyday $ = :home (&map:get router :name)
                     =< 16 nil
-                    comp-entry :plan |Plan $ = :plan (:name router)
+                    comp-entry :plan |Plan $ = :plan (&map:get router :name)
                     =< 16 nil
-                    comp-entry :history |History $ = :history (:name router)
+                    comp-entry :history |History $ = :history (&map:get router :name)
                   div
                     {}
                       :style $ {} (:cursor |pointer)
@@ -387,29 +415,33 @@
         'comp-deleted-task $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-deleted-task (sort-key task)
-              div
-                {} $ :style
-                  merge ui/row-parted $ {}
-                    :background-color $ hsl 0 0 96
-                    :margin-bottom 8
-                    :padding 8
+              let
+                  task-map $ unsafe-coerce task 'Map
                 div
-                  {} $ :style ui/flex
-                  <> $ :text task
-                span
-                  {}
-                    :on-click $ fn (e d!) (d! :plan/reuse sort-key)
-                    :style $ {} (:cursor :pointer)
-                  comp-i :shuffle 14 $ hsl 200 80 70
+                  {} $ :style
+                    merge ui/row-parted $ {}
+                      :background-color $ hsl 0 0 96
+                      :margin-bottom 8
+                      :padding 8
+                  div
+                    {} $ :style ui/flex
+                    <> $ option:unwrap-or (&map:get task-map :text) |
+                  span
+                    {}
+                      :on-click $ fn (e d!) (d! :plan/reuse sort-key)
+                      :style $ {} (:cursor :pointer)
+                    comp-i :shuffle 14 $ hsl 200 80 70
           :examples $ []
           :schema $ :: 'Dynamic
         'comp-plan $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-plan (states plan)
               let
-                  cursor $ :cursor states
-                  state $ or (:data states)
+                  states-map $ unsafe-coerce states 'Map
+                  cursor $ option:unwrap-or (&map:get states-map :cursor) ([])
+                  state $ option:unwrap-or (&map:get states-map :data)
                     {} $ :show-deprecated? false
+                  state-map $ unsafe-coerce state 'Map
                   create-plugin $ use-prompt (>> states :create)
                     {} (:title "|A task") (:initial |)
                 div
@@ -437,7 +469,10 @@
                         or $ {}
                         .to-list
                         filter $ fn (pair)
-                          not $ :deleted? (last pair)
+                          let[] (_ task) pair $ not
+                            option:unwrap-or
+                              &map:get (unsafe-coerce task 'Map) :deleted?
+                              , false
                         .sort-by first
                         map $ fn (pair)
                           let[] (k task) pair $ [] k
@@ -449,7 +484,9 @@
                         or $ {}
                         .to-list
                         filter $ fn (pair)
-                          :deleted? $ last pair
+                          let[] (_ task) pair $ option:unwrap-or
+                            &map:get (unsafe-coerce task 'Map) :deleted?
+                            , false
                         .sort-by first
                     if
                       not $ empty? deleted-plans
@@ -466,7 +503,8 @@
                               :cursor :pointer
                             fn (e d!)
                               d! cursor $ update state :show-deprecated? not
-                        if (:show-deprecated? state)
+                        if
+                          option:unwrap-or (&map:get state-map :show-deprecated?) false
                           list->
                             {} $ :style ({})
                             -> deleted-plans (.to-list)
@@ -484,33 +522,48 @@
           :code $ quote
             defcomp comp-task (states sort-id task)
               let
+                  task-map $ unsafe-coerce task 'Map
                   update-plugin $ use-prompt (>> states :update)
                     {} (:text "|New task:")
-                      :initial $ :text task
+                      :initial $ option:unwrap-or (&map:get task-map :text) |
                   remove-plugin $ use-confirm (>> states :remove)
                     {} $ :text "|Sure to remove from everyday task?"
                 div
-                  {}
-                    :style $ merge ui/row-parted
-                      {}
-                        :background-color $ hsl 0 0 96
-                        :margin "|0 8px 8px 0"
-                        :padding 8
-                    :draggable true
-                    :on-dragstart $ fn (e d! m!)
-                      -> (:event e) .-dataTransfer $ .!setData |text/plain sort-id
-                    :on-dragover $ fn (e d! m!)
-                      .!preventDefault $ :event e
-                      set!
-                        -> (:event e) .-dataTransfer .-dropEffect
-                        , |move
-                    :on-drop $ fn (e d! m!)
-                      let
-                          drag-id $ -> (:event e) .-dataTransfer (.!getData |text)
-                          drop-id sort-id
-                        when (not= drag-id drop-id)
-                          d! :plan/move $ {} (:from drag-id) (:to drop-id)
-                  <> $ :text task
+                  unsafe-coerce
+                    {}
+                      :style $ merge ui/row-parted
+                        {}
+                          :background-color $ hsl 0 0 96
+                          :margin "|0 8px 8px 0"
+                          :padding 8
+                      :draggable true
+                      :on-dragstart $ fn (e d! m!)
+                        let
+                            event $ unsafe-coerce
+                              option:unwrap-or (get e :event) (js-object)
+                              , JsObject
+                            data-transfer $ unsafe-coerce (.-dataTransfer event) JsObject
+                          .!setData data-transfer |text/plain sort-id
+                      :on-dragover $ fn (e d! m!)
+                        let
+                            event $ unsafe-coerce
+                              option:unwrap-or (get e :event) (js-object)
+                              , JsObject
+                            data-transfer $ unsafe-coerce (.-dataTransfer event) JsObject
+                          .!preventDefault event
+                          set! (.-dropEffect data-transfer) |move
+                      :on-drop $ fn (e d! m!)
+                        let
+                            event $ unsafe-coerce
+                              option:unwrap-or (get e :event) (js-object)
+                              , JsObject
+                            data-transfer $ unsafe-coerce (.-dataTransfer event) JsObject
+                            drag-id $ .!getData data-transfer |text
+                            drop-id sort-id
+                          when (not= drag-id drop-id)
+                            d! :plan/move $ {} (:from drag-id) (:to drop-id)
+                    , respo.schema/DomProps
+                  <> $ option:unwrap-or (&map:get task-map :text) |
                   div
                     {} $ :style ui/row
                     comp-icon :edit
@@ -552,13 +605,16 @@
         'comp-profile $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-profile (user members)
-              div
-                {} $ :style
-                  merge ui/flex $ {} (:padding 16) (:width |60%)
+              let
+                  user-map $ unsafe-coerce user 'Map
+                div $ {}
+                  :style $ merge ui/flex
+                    {} (:padding 16) (:width |60%)
                 div
                   {} $ :style
                     {} (:font-family ui/font-fancy) (:font-size 32) (:font-weight 100)
-                  <> $ str "|Hello! " (:name user)
+                  <> $ str "|Hello! "
+                    option:unwrap-or (&map:get user-map :name) |
                 =< nil 16
                 div
                   {} $ :style ui/row
@@ -608,18 +664,25 @@
         'comp-task $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defcomp comp-task (task operation)
-              div
-                {} $ :style
-                  merge ui/row $ {} (:align-items :center) (:margin 8)
-                    :background-color $ hsl 0 0 96
-                div $ {}
-                  :style $ {} (:width 32) (:height 32)
-                    :background-color $ if (:done? operation) (hsl 200 80 80) (hsl 0 0 90)
-                    :cursor :pointer
-                  :on-click $ fn (e d!)
-                    d! :operation/toggle-task $ :id task
-                =< 8 nil
-                <> $ :text task
+              let
+                  task-map $ unsafe-coerce task 'Map
+                  operation-map $ unsafe-coerce operation 'Map
+                div
+                  {} $ :style
+                    merge
+                      unsafe-coerce ui/row $ :: 'Map 'Tag 'Dynamic
+                      unsafe-coerce
+                        {} (:align-items :center) (:margin 8)
+                          :background-color $ hsl 0 0 96
+                        :: 'Map 'Tag 'Dynamic
+                  div $ {}
+                    :style $ {} (:width 32) (:height 32)
+                      :background-color $ if (&map:get operation-map :done?) (hsl 200 80 80) (hsl 0 0 90)
+                      :cursor :pointer
+                    :on-click $ fn (e d!)
+                      d! :operation/toggle-task $ &map:get task-map :id
+                  =< 8 nil
+                  <> $ &map:get task-map :text
           :examples $ []
           :schema $ :: 'Dynamic
         'comp-today $ %{} 'CodeEntry (:doc |)
@@ -639,12 +702,13 @@
                         let-sugar
                               [] sort-id task
                               , pair
+                            task-map $ unsafe-coerce task 'Map
                             operation $ or
-                              get operations $ :id task
+                              &map:get operations $ &map:get task-map :id
                               , schema/operation
                           and
-                            not $ :deleted? task
-                            not $ :done? operation
+                            not $ &map:get task-map :deleted?
+                            not $ &map:get (unsafe-coerce operation 'Map) :done?
                     done-tasks $ -> plan
                       or $ {}
                       .to-list
@@ -652,12 +716,13 @@
                         let-sugar
                               [] sort-id task
                               , pair
+                            task-map $ unsafe-coerce task 'Map
                             operation $ or
-                              get operations $ :id task
+                              &map:get operations $ &map:get task-map :id
                               , schema/operation
                           and
-                            not $ :deleted? task
-                            :done? operation
+                            not $ &map:get task-map :deleted?
+                            &map:get (unsafe-coerce operation 'Map) :done?
                   div
                     {} $ :style (merge ui/column)
                     div ({})
@@ -672,7 +737,7 @@
                                   , pair
                               [] sort-id $ let
                                   operation $ or
-                                    get operations $ :id task
+                                    &map:get operations $ &map:get (unsafe-coerce task 'Map) :id
                                     , schema/operation
                                 comp-task task operation
                     div
@@ -689,7 +754,7 @@
                               let[] (sort-id task) pair $ [] sort-id
                                 let
                                     operation $ or
-                                      get operations $ :id task
+                                      &map:get operations $ &map:get (unsafe-coerce task 'Map) :id
                                       , schema/operation
                                   comp-task task operation
           :examples $ []

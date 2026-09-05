@@ -7,6 +7,7 @@ node_modules/
 .calcit/
 .yarn/*.gz
 dist/
+dist-server/
 out-page/
 
 yarn-error.log
