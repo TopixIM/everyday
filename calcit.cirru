@@ -899,8 +899,9 @@
             defn sync-clients! (reel) (begin-twig-frame!)
               wss-each! $ fn (sid)
                 let
-                    db $ :db reel
-                    records $ :records reel
+                    reel-state $ unsafe-coerce reel 'cumulo-reel.core/ReelState
+                    db $ :db reel-state
+                    records $ :records reel-state
                     session $ get-in db ([] :sessions sid)
                     old-store $ or (get @*client-caches sid) nil
                     new-store $ twig-container db session records
@@ -957,31 +958,39 @@
           :code $ quote
             defn twig-container (db session records)
               let
-                  logged-in? $ some? (:user-id session)
-                  router $ :router session
-                  base-data $ {} (:logged-in? logged-in?) (:session session)
+                  db-map $ unsafe-coerce db 'Map
+                  session-map $ unsafe-coerce
+                    option:unwrap-or session $ {}
+                    , 'Map
+                  user-id $ &map:get session-map :user-id
+                  logged-in? $ some? user-id
+                  router $ unsafe-coerce (&map:get session-map :router) 'Map
+                  base-data $ {} (:logged-in? logged-in?) (:session session-map)
                     :reel-length $ count records
-                  date $ :date session
+                  date $ &map:get session-map :date
                 merge base-data $ if logged-in?
                   let
-                      user $ get-in db
-                        [] :users $ :user-id session
+                      user $ unsafe-coerce
+                        option:unwrap-or
+                          get-in db-map $ [] :users user-id
+                          {}
+                        , 'Map
                     {}
                       :user $ twig-user user
                       :router $ assoc router :data
-                        case-default (:name router) ({})
+                        case-default (&map:get router :name) ({})
                           :home $ {}
-                            :plan $ :plan user
+                            :plan $ &map:get user :plan
                             :operations $ when (some? date)
-                              or
+                              option:unwrap-or
                                 get-in user $ [] :days date
                                 {}
-                          :plan $ :plan user
+                          :plan $ &map:get user :plan
                           :history $ {}
-                            :plan $ :plan user
-                            :days $ :days user
-                          :profile $ twig-members (:sessions db) (:users db)
-                      :count $ count (:sessions db)
+                            :plan $ &map:get user :plan
+                            :days $ &map:get user :days
+                          :profile $ twig-members (&map:get db-map :sessions) (&map:get db-map :users)
+                      :count $ count (&map:get db-map :sessions)
                       :color $ rand-hex-color!
                   {}
           :examples $ []
@@ -992,7 +1001,11 @@
               -> sessions (.to-list)
                 map $ fn (pair)
                   let[] (k session) pair $ [] k
-                    get-in users $ [] (:user-id session) :name
+                    option:unwrap-or
+                      get-in users $ []
+                        &map:get (unsafe-coerce session 'Map) :user-id
+                        , :name
+                      , nil
                 pairs-map
           :examples $ []
           :schema $ :: 'Dynamic
@@ -1044,10 +1057,15 @@
           :code $ quote
             defn toggle-task (db op-data sid op-id op-time)
               let
-                  session $ get-in db ([] :sessions sid)
-                  user-id $ :user-id session
-                  path $ [] :users user-id :days (:date session) op-data :done?
-                assoc-in db path $ not (get-in db path)
+                  session $ unsafe-coerce
+                    option:unwrap-or
+                      get-in db $ [] :sessions sid
+                      {}
+                    , 'Map
+                  user-id $ &map:get session :user-id
+                  path $ [] :users user-id :days (&map:get session :date) op-data :done?
+                assoc-in db path $ not
+                  option:unwrap-or (get-in db path) false
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
@@ -1058,15 +1076,20 @@
           :code $ quote
             defn create (db op-data sid op-id op-time)
               let
-                  session $ get-in db ([] :sessions sid)
-                  user $ get-in db
-                    [] :users $ :user-id session
-                update-in db
-                  [] :users (:user-id session) :plan
+                  session $ unsafe-coerce
+                    option:unwrap-or
+                      get-in db $ [] :sessions sid
+                      {}
+                    , 'Map
+                  user-id $ &map:get session :user-id
+                update-in db ([] :users user-id :plan)
                   fn (plan)
                     let
-                        new-key $ key-append plan
-                      assoc plan new-key $ merge schema/task
+                        plan-map $ unsafe-coerce
+                          option:unwrap-or plan $ {}
+                          , 'Map
+                        new-key $ key-append plan-map
+                      assoc plan-map new-key $ merge (unsafe-coerce schema/task 'Map)
                         {} (:id op-id) (:time op-time) (:text op-data)
           :examples $ []
           :schema $ :: 'Dynamic
@@ -1074,15 +1097,23 @@
           :code $ quote
             defn move (db op-data sid op-id op-time)
               let
-                  user-id $ get-in db ([] :sessions sid :user-id)
-                  from-id $ :from op-data
-                  to-id $ :to op-data
+                  user-id $ option:unwrap
+                    get-in db $ [] :sessions sid :user-id
+                  op-map $ unsafe-coerce op-data 'Map
+                  from-id $ &map:get op-map :from
+                  to-id $ &map:get op-map :to
                 update-in db ([] :users user-id :plan)
                   fn (plan)
                     let
-                        new-key $ if (< to-id from-id) (key-before plan to-id) (key-after plan to-id)
-                      -> plan
-                        assoc new-key $ get plan from-id
+                        plan-map $ unsafe-coerce
+                          option:unwrap-or plan $ {}
+                          , 'Map
+                        new-key $ if
+                          = -1 $ &compare to-id from-id
+                          key-before plan-map to-id
+                          key-after plan-map to-id
+                      -> plan-map
+                        assoc new-key $ option:unwrap (get plan-map from-id)
                         dissoc from-id
           :examples $ []
           :schema $ :: 'Dynamic
@@ -1108,12 +1139,17 @@
           :code $ quote
             defn update-text (db op-data sid op-id op-time)
               let
-                  sort-id $ :id op-data
-                  text $ :text op-data
-                  user-id $ get-in db ([] :sessions sid :user-id)
+                  op-map $ unsafe-coerce op-data 'Map
+                  sort-id $ &map:get op-map :id
+                  text $ &map:get op-map :text
+                  user-id $ option:unwrap
+                    get-in db $ [] :sessions sid :user-id
                 update-in db ([] :users user-id :plan sort-id)
                   fn (task)
-                    -> task (assoc :text text) (assoc :time op-time)
+                    ->
+                      option:unwrap-or task $ {}
+                      assoc :text text
+                      assoc :time op-time
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
@@ -1156,7 +1192,9 @@
             defn remove-message (db op-data sid op-id op-time)
               update-in db ([] :sessions sid :messages)
                 fn (messages)
-                  dissoc messages $ :id op-data
+                  dissoc
+                    option:unwrap-or messages $ {}
+                    &map:get (unsafe-coerce op-data 'Map) :id
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
@@ -1164,27 +1202,49 @@
           ns app.updater.session $ :require ([] app.schema :as schema)
     'app.updater.user $ %{} 'FileEntry
       :defs $ {}
+        'as-user-map $ %{} 'CodeEntry (:doc |)
+          :code $ quote
+            defn as-user-map (user) (unsafe-coerce user 'Map)
+          :examples $ []
+          :schema $ :: 'Fn
+            {} (:return 'Map)
+              :args $ [] 'Dynamic
         'log-in $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn log-in (db op-data sid op-id op-time)
               let-sugar
                     [] username password
                     , op-data
-                  maybe-user $ -> (:users db) (vals) (.to-list)
+                  maybe-user $ -> (&map:get db :users) (vals) (.to-list)
                     find $ fn (user)
-                      and $ = username (:name user)
+                      = username $ &map:get (as-user-map user) :name
                 update-in db ([] :sessions sid)
                   fn (session)
-                    if (some? maybe-user)
+                    if (option:some? maybe-user)
                       if
-                        = (md5 password) (:password maybe-user)
-                        assoc session :user-id $ :id maybe-user
-                        update session :messages $ fn (messages)
-                          assoc messages op-id $ {} (:id op-id)
-                            :text $ str "|Wrong password for " username
-                      update session :messages $ fn (messages)
-                        assoc messages op-id $ {} (:id op-id)
-                          :text $ str "|No user named: " username
+                        = (md5 password)
+                          &map:get
+                            as-user-map $ option:unwrap maybe-user
+                            , :password
+                        assoc
+                          option:unwrap-or session $ {}
+                          , :user-id $ &map:get
+                            as-user-map $ option:unwrap maybe-user
+                            , :id
+                        update
+                          option:unwrap-or session $ {}
+                          , :messages $ fn (messages)
+                            assoc
+                              option:unwrap-or messages $ {}
+                              , op-id $ {} (:id op-id)
+                                :text $ str "|Wrong password for " username
+                      update
+                        option:unwrap-or session $ {}
+                        , :messages $ fn (messages)
+                          assoc
+                            option:unwrap-or messages $ {}
+                            , op-id $ {} (:id op-id)
+                              :text $ str "|No user named: " username
           :examples $ []
           :schema $ :: 'Dynamic
         'log-out $ %{} 'CodeEntry (:doc |)
@@ -1200,18 +1260,20 @@
                     [] username password
                     , op-data
                   maybe-user $ find
-                    vals $ :users db
+                    -> (&map:get db :users) vals .to-list
                     fn (user)
-                      = username $ :name user
-                if (some? maybe-user)
+                      = username $ &map:get (as-user-map user) :name
+                if (option:some? maybe-user)
                   update-in db ([] :sessions sid :messages)
                     fn (messages)
-                      assoc messages op-id $ {} (:id op-id)
-                        :text $ str "|Name is taken: " username
+                      assoc
+                        option:unwrap-or messages $ {}
+                        , op-id $ {} (:id op-id)
+                          :text $ str "|Name is taken: " username
                   -> db
                     assoc-in ([] :sessions sid :user-id) op-id
                     assoc-in ([] :users op-id)
-                      merge schema/user $ {} (:id op-id) (:name username) (:nickname username)
+                      {} (:id op-id) (:name username) (:nickname username)
                         :password $ md5 password
                         :avatar nil
           :examples $ []
