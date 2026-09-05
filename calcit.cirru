@@ -710,7 +710,8 @@
           :schema $ :: 'Dynamic
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            def dev? $ = |dev (get-env |mode |release)
+            def dev? $ = |dev
+              option:unwrap-or (get-env |mode) |release
           :examples $ []
           :schema $ :: 'Dynamic
         'site $ %{} 'CodeEntry (:doc |)
@@ -796,8 +797,7 @@
           :schema $ :: 'Dynamic
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defatom *reel $ merge reel-schema
-              {} (:base @*initial-db) (:db @*initial-db)
+            defatom *reel $ struct-with reel-schema (:base @*initial-db) (:db @*initial-db)
           :examples $ []
           :schema $ :: 'Dynamic
         'dispatch! $ %{} 'CodeEntry (:doc |)
@@ -808,16 +808,16 @@
                   op-time $ -> (get-time!) (.timestamp)
                 if config/dev? $ println |Dispatch! (str op) op-data sid
                 if (= op :effect/persist) (persist-db!)
-                  reset! *reel $ reel-reducer @*reel updater op op-data sid op-id op-time config/dev?
+                  reset! *reel $ reel-reducer @*reel updater (:: op op-data) sid op-id op-time config/dev?
           :examples $ []
           :schema $ :: 'Dynamic
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn get-backup-path! () $ let
-                now $ .extract (get-time!)
+                now $ extract-time (get-time!)
               join-path calcit-dirname |backups
-                str $ :month now
-                str (:day now) |-snapshot.cirru
+                str $ &map:get now :month
+                str (&map:get now :day) |-snapshot.cirru
           :examples $ []
           :schema $ :: 'Dynamic
         'main! $ %{} 'CodeEntry (:doc |)
@@ -825,8 +825,9 @@
             defn main! ()
               println "|Running mode:" $ if config/dev? |dev |release
               let
-                  p? $ get-env |port
-                  port $ if (some? p?) (parse-float p?) (:port config/site)
+                  port $ option:unwrap-or
+                    option:map (get-env |port) parse-float
+                    &map:get config/site :port
                 run-server! port
                 println $ str "|Server started on port:" port
               do (; "|init it before doing multi-threading") (identity @*reader-reel)
@@ -929,7 +930,7 @@
             app.$meta :refer $ calcit-dirname
             calcit.std.fs :refer $ path-exists? check-write-file!
             calcit.std.time :refer $ set-interval
-            calcit.std.date :refer $ Date get-time!
+            calcit.std.date :refer $ Date get-time! extract-time
             calcit.std.path :refer $ join-path
     'app.style $ %{} 'FileEntry
       :defs $ {}
@@ -1015,25 +1016,23 @@
       :defs $ {}
         'updater $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defn updater (db op op-data sid op-id op-time)
-              let
-                  f $ case-default op
-                    fn (& args) (println "|Unknown op:" op) db
-                    :session/connect session/connect
-                    :session/disconnect session/disconnect
-                    :user/log-in user/log-in
-                    :user/sign-up user/sign-up
-                    :user/log-out user/log-out
-                    :session/remove-message session/remove-message
-                    :session/local-date session/local-date
-                    :router/change router/change
-                    :plan/create plan/create
-                    :plan/update-text plan/update-text
-                    :plan/remove-one plan/remove-one
-                    :plan/reuse plan/reuse
-                    :plan/move plan/move
-                    :operation/toggle-task operation/toggle-task
-                f db op-data sid op-id op-time
+            defn updater (db op sid op-id op-time)
+              match op
+                (:session/connect op-data) (session/connect db op-data sid op-id op-time)
+                (:session/disconnect op-data) (session/disconnect db op-data sid op-id op-time)
+                (:user/log-in op-data) (user/log-in db op-data sid op-id op-time)
+                (:user/sign-up op-data) (user/sign-up db op-data sid op-id op-time)
+                (:user/log-out op-data) (user/log-out db op-data sid op-id op-time)
+                (:session/remove-message op-data) (session/remove-message db op-data sid op-id op-time)
+                (:session/local-date op-data) (session/local-date db op-data sid op-id op-time)
+                (:router/change op-data) (router/change db op-data sid op-id op-time)
+                (:plan/create op-data) (plan/create db op-data sid op-id op-time)
+                (:plan/update-text op-data) (plan/update-text db op-data sid op-id op-time)
+                (:plan/remove-one op-data) (plan/remove-one db op-data sid op-id op-time)
+                (:plan/reuse op-data) (plan/reuse db op-data sid op-id op-time)
+                (:plan/move op-data) (plan/move db op-data sid op-id op-time)
+                (:operation/toggle-task op-data) (operation/toggle-task db op-data sid op-id op-time)
+                _ $ do (println "|Unknown op:" op) db
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
