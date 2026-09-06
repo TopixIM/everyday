@@ -1,4 +1,4 @@
-name: Try to upload
+name: Upload
 
 on:
   push:
@@ -6,79 +6,93 @@ on:
       - main
   pull_request: {}
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
-    - uses: actions/setup-node@v3
-      with:
-        node-version: 16
-        cache: 'yarn'
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
 
-    - name: ACTIONS_ALLOW_UNSECURE_COMMANDS
-      id: ACTIONS_ALLOW_UNSECURE_COMMANDS
-      run: echo 'ACTIONS_ALLOW_UNSECURE_COMMANDS=true' >> $GITHUB_ENV
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@4.12.0 --activate
+          yarn --version
 
-    - name: add cr
-      run: |
-        mkdir -p $GITHUB_WORKSPACE/bin
-        wget -O $GITHUB_WORKSPACE/bin/cr https://github.com/calcit-lang/calcit/releases/download/0.6.20/cr
-        chmod +x $GITHUB_WORKSPACE/bin/cr
-        echo "::add-path::$GITHUB_WORKSPACE/bin"
+      - name: Set up Calcit 0.13.77 and Caps
+        uses: calcit-lang/setup-calcit@704b3f5cd6f9ce3bd1e0c926dbdd1d181adb8180 # v1.4.0
+        with:
+          version: 0.13.77
+          tools: calcit,caps
 
-    - name: "prepare modules"
-      run: >
-        mkdir -p ~/.config/calcit/modules/ && cd ~/.config/calcit/modules/
-        && git clone https://github.com/calcit-lang/lilac.git
-        && git clone https://github.com/calcit-lang/memof.git
-        && git clone https://github.com/calcit-lang/recollect.git
-        && git clone https://github.com/Respo/respo.calcit.git
-        && git clone https://github.com/Respo/respo-ui.calcit.git
-        && git clone https://github.com/Respo/respo-message.calcit.git
-        && git clone https://github.com/Respo/alerts.calcit.git
-        && git clone https://github.com/Cumulo/cumulo-util.calcit.git
-        && git clone https://github.com/Cumulo/cumulo-reel.calcit.git
-        && git clone https://github.com/mvc-works/ws-edn.calcit.git
-        && git clone https://github.com/Respo/respo-feather.calcit.git
-        && git clone https://github.com/calcit-lang/bisection-key.git
-        && git clone https://github.com/calcit-lang/calcit-wss.git
-        && git clone https://github.com/calcit-lang/calcit.std.git
+      - name: Resolve immutable dependencies
+        run: |
+          set -euo pipefail
+          caps --strict --ci
+          yarn install --immutable
+          caps verify --toolchain
 
-    - run: cr --entry server --emit-ir -1
+      - name: Check canonical snapshot
+        run: |
+          set -euo pipefail
+          calcit calcit.cirru edit format
+          git diff --exit-code -- calcit.cirru
 
-    - run: yarn && yarn compile-page && yarn release-page
+      - name: Check client and server entries
+        run: |
+          set -euo pipefail
+          calcit calcit.cirru --check-only
+          calcit calcit.cirru --entry server --check-only
 
-    - run: mkdir -p dist-server && cp compact.cirru dist-server && cp package.json dist-server/
-      name: Copy server scripts
+      - name: Check upgrade quality baseline
+        run: |
+          set -euo pipefail
+          calcit calcit.cirru analyze deprecated --summary-only
+          calcit calcit.cirru --entry server analyze deprecated --summary-only
+          calcit calcit.cirru analyze dynamic-methods --max 2
+          calcit calcit.cirru --entry server analyze dynamic-methods --max 0
+          calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
 
-    - name: Upload web assets
-      id: deploy
-      uses: Pendect/action-rsyncer@v2.0.0
-      env:
-        DEPLOY_KEY: ${{secrets.rsync_private_key}}
-      with:
-        flags: '-avzr --progress'
-        options: ''
-        ssh_options: ''
-        src: 'dist/*'
-        dest: 'rsync-user@tiye.me:/web-assets/repo/${{ github.repository }}'
+      - name: Build web and server artifacts
+        run: |
+          set -euo pipefail
+          calcit calcit.cirru js
+          yarn vite build --base=./
+          calcit calcit.cirru --entry server ir
+          mkdir -p dist-server
+          cp js-out/program-ir.cirru dist-server/compact.cirru
+          cp calcit.cirru deps.cirru package.json dist-server/
 
-    - name: Display status from deploy
-      run: echo "${{ steps.deploy.outputs.status }}"
-
-    - name: Upload server script
-      id: deploy-server
-      uses: Pendect/action-rsyncer@v2.0.0
-      env:
-        DEPLOY_KEY: ${{secrets.rsync_private_key}}
-      with:
-        flags: '-avzr --progress'
-        options: ''
-        ssh_options: ''
-        src: 'dist-server/*'
-        dest: 'rsync-user@tiye.me:/servers/paste-sharing/'
-
-    - name: Display status from deploy
-      run: echo "${{ steps.deploy-server.outputs.status }}"
+      - name: Deploy web and server
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          DEPLOY_KEY: ${{ secrets.rsync_private_key }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_KEY"
+          ssh_dir="$RUNNER_TEMP/everyday-ssh"
+          key_file="$ssh_dir/id_ed25519"
+          known_hosts_file="$GITHUB_WORKSPACE/.github/ssh_known_hosts"
+          matching_keys="$ssh_dir/tiye.me-ed25519"
+          install -d -m 700 "$ssh_dir"
+          install -m 600 /dev/null "$key_file"
+          printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > "$key_file"
+          trap 'rm -f "$key_file" "$matching_keys"' EXIT
+          awk '$1 == "tiye.me" && $2 == "ssh-ed25519" { print }' "$known_hosts_file" > "$matching_keys"
+          test "$(awk 'NF { count += 1 } END { print count + 0 }' "$matching_keys")" -eq 1
+          actual_fingerprint="$(ssh-keygen -lf "$matching_keys" | awk '{ print $2 }')"
+          test "$actual_fingerprint" = 'SHA256:f0ME3+UEzCM357Vtdic/bay2ygVUULBJ2pfaPTjBYhg'
+          ssh_command="ssh -i $key_file -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$known_hosts_file"
+          rsync -avzr --progress -e "$ssh_command" dist/ "rsync-user@tiye.me:/web-assets/repo/${GITHUB_REPOSITORY}/"
+          rsync -avzr --progress -e "$ssh_command" dist-server/ "rsync-user@tiye.me:/servers/paste-sharing/"
