@@ -232,8 +232,10 @@
                 list->
                   {} $ :style
                     merge ui/flex $ {} (:padding-bottom 160)
-                  -> days
-                    or $ {}
+                  ->
+                    unsafe-coerce
+                      or days $ {}
+                      , 'Map
                     .to-list
                     .sort $ fn (date-x date-y)
                       &compare
@@ -253,12 +255,12 @@
                 list->
                   {} $ :style
                     {} $ :padding-left 16
-                  -> operations (.to-list)
+                  -> (unsafe-coerce operations 'Map) (.to-list)
                     map $ fn (pair)
                       let[] (task-id info) pair $ let
                           task $ first
                             filter
-                              -> plan (.to-list) (.map last)
+                              -> (unsafe-coerce plan 'Map) (.to-list) (.map last)
                               fn (task)
                                 = task-id $ &map:get (unsafe-coerce task 'Map) :id
                         [] task-id $ div ({})
@@ -460,13 +462,15 @@
                           :on-click $ fn (e d!)
                             .show create-plugin d! $ fn (text)
                               when
-                                not $ .blank? text
+                                not $ .blank? (unsafe-coerce text 'String)
                                 d! :plan/create text
                         <> |Add
                     list->
                       {} $ :style ({})
-                      -> plan
-                        or $ {}
+                      ->
+                        unsafe-coerce
+                          or plan $ {}
+                          , 'Map
                         .to-list
                         filter $ fn (pair)
                           let[] (_ task) pair $ not
@@ -480,8 +484,10 @@
                               comp-task (>> states k) k task
                   =< nil 80
                   let
-                      deleted-plans $ -> plan
-                        or $ {}
+                      deleted-plans $ ->
+                        unsafe-coerce
+                          or plan $ {}
+                          , 'Map
                         .to-list
                         filter $ fn (pair)
                           let[] (_ task) pair $ option:unwrap-or
@@ -574,7 +580,7 @@
                       fn (e d!)
                         .show update-plugin d! $ fn (result)
                           when
-                            not $ .blank? result
+                            not $ .blank? (unsafe-coerce result 'String)
                             d! :plan/update-text $ {} (:id sort-id) (:text result)
                     =< 16 nil
                     comp-icon :eye-off
@@ -622,7 +628,7 @@
                   =< 8 nil
                   list->
                     {} $ :style ui/row
-                    -> members (.to-list)
+                    -> (unsafe-coerce members 'Map) (.to-list)
                       map $ fn (pair)
                         let[] (k username) pair $ [] k
                           div
@@ -695,8 +701,10 @@
                   {} $ :style style/title
                   <> $ str "|Today(" date "|)"
                 let
-                    todo-tasks $ -> plan
-                      or $ {}
+                    todo-tasks $ ->
+                      unsafe-coerce
+                        or plan $ {}
+                        , 'Map
                       .to-list
                       filter $ fn (pair)
                         let-sugar
@@ -709,8 +717,10 @@
                           and
                             not $ &map:get task-map :deleted?
                             not $ &map:get (unsafe-coerce operation 'Map) :done?
-                    done-tasks $ -> plan
-                      or $ {}
+                    done-tasks $ ->
+                      unsafe-coerce
+                        or plan $ {}
+                        , 'Map
                       .to-list
                       filter $ fn (pair)
                         let-sugar
@@ -1070,7 +1080,7 @@
         'twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn twig-members (sessions users)
-              -> sessions (.to-list)
+              -> (unsafe-coerce sessions 'Map) (.to-list)
                 map $ fn (pair)
                   let[] (k session) pair $ [] k
                     option:unwrap-or

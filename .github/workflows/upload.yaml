@@ -59,7 +59,10 @@ jobs:
         run: |
           set -euo pipefail
           calcit calcit.cirru analyze deprecated --summary-only
-          calcit calcit.cirru analyze dynamic-methods --max 18
+          calcit calcit.cirru --entry server analyze deprecated --summary-only
+          calcit calcit.cirru analyze dynamic-methods --max 2
+          calcit calcit.cirru --entry server analyze dynamic-methods --max 0
+          calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
 
       - name: Build web and server artifacts
         run: |
