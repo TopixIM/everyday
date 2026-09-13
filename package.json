@@ -16,7 +16,7 @@
   "author": "jiyinyiyong",
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "0.13.77",
+    "@calcit/procs": "0.14.16",
     "dayjs": "^1.11.7",
     "shortid": "^2.2.16"
   },
