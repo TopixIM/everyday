@@ -17,8 +17,7 @@
   "license": "MIT",
   "dependencies": {
     "@calcit/procs": "0.15.3",
-    "dayjs": "^1.11.7",
-    "shortid": "^2.2.16"
+    "dayjs": "^1.11.7"
   },
   "devDependencies": {
     "bottom-tip": "^0.1.3",

@@ -816,9 +816,11 @@
                 exists? js/window
                 , false
               (exists? js/process) (= |true js/process.env.cdn)
-              :else false
+              true false
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Bool)
+            :args $ []
+            :features $ #{} :js-ffi
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
             = |dev $ option:unwrap-or (get-env |mode) |release
