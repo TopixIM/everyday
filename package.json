@@ -1,7 +1,7 @@
 {
   "packageManager": "yarn@4.12.0",
   "name": "cumulo-workflow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cumulo Workflow",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
   "author": "jiyinyiyong",
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "0.15.3",
+    "@calcit/procs": "0.18.1",
     "dayjs": "^1.11.7"
   },
   "devDependencies": {
