@@ -15,3 +15,5 @@ yarn-error.log
 backups
 
 storage.cirru
+.pnp.cjs
+.pnp.loader.mjs
