@@ -3,11 +3,11 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {}
-    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :js) (:reload-fn 'app.client/reload!)
+    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :js) (:reload-fn 'app.client/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |lilac/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |bisection-key/ |alerts.calcit/ |respo-feather.calcit/
       :type-slots $ {}
-    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!)
+    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!) (:target :node)
       :feature-policy $ {}
       :modules $ [] |lilac/ |recollect/ |memof/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |bisection-key/ |calcit.std/ |calcit-wss/
       :type-slots $ {}
@@ -209,13 +209,15 @@
                   :on-click $ fn (e d!) (d! :effect/connect nil)
                 <> "|Socket broken! Click to retry." $ {} (:font-family ui/font-fancy) (:font-weight 100) (:font-size 32)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ []
         'comp-status-color $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-status-color (color)
             div $ {} $ :style
               {} (:width 16) (:height 16) (:position :absolute) (:top 60) (:right 8) (:background-color color) (:border-radius |8px) (:opacity 0.8)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'String
         'style-body $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-body
             {} $ :padding "|8px 16px"
@@ -390,13 +392,15 @@
                     :: 'Map 'Tag 'Dynamic
               <> title
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Tag 'String 'Bool
+            :features $ #{} :js-ffi
         'comp-navigation $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-navigation (logged-in? count-members router)
             div
               {} $ :style $ merge ui/row-center
                 {} (:height 48) (:justify-content :space-between) (:padding "|0 16px") (:font-size 16)
-                  :border-bottom $ str "|1px solid " $ hsl 0 0 0 (%some 0.1)
+                  :border-bottom $ str "|1px solid " $ hsl 0 0 0 (Option :some 0.1)
                   :font-family ui/font-fancy
                   :font-weight 100
                   :flex-shrink 0
@@ -417,9 +421,10 @@
                       d! :router/change $ {} $ :name :profile
                   <> $ if logged-in? |Me |Guest
                   =< 8 nil
-                  <> count-members
+                  <> $ str count-members
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Bool 'Number $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.navigation
           :require
@@ -724,7 +729,9 @@
                 =< 8 nil
                 <> $ &map:get task-map :text
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
         'comp-today $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-today (date plan operations)
             div
@@ -797,7 +804,9 @@
                                 , schema/operation
                             comp-task task operation
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'String 'Dynamic 'Dynamic
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.today
           :require
@@ -815,7 +824,12 @@
             cond
                 exists? js/window
                 , false
-              (exists? js/process) (= |true js/process.env.cdn)
+              (exists? js/process)
+                let
+                    raw js/process.env.cdn
+                  if (js-present? raw)
+                    = |true $ expect-string |process.env.cdn raw
+                    , false
               true false
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Bool)
@@ -833,6 +847,7 @@
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
+          :require $ js-ffi.contract :refer $ [] expect-string
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'database $ %{} 'CodeEntry (:doc |)
@@ -1021,9 +1036,9 @@
             :features $ #{} :js-ffi
         'storage-file $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def storage-file
-            if (empty? calcit-dirname)
-              str calcit-dirname $ :storage-file config/site
-              str calcit-dirname |/ $ :storage-file config/site
+            let
+                storage-name $ option:unwrap-or (:storage-file config/site) |storage.cirru
+              if (empty? calcit-dirname) (str calcit-dirname storage-name) (str calcit-dirname |/ storage-name)
           :examples $ []
           :schema $ :: 'String
         'sync-clients! $ %{} 'CodeEntry (:doc |)
@@ -1034,7 +1049,7 @@
                   db $ :db reel-state
                   records $ :records reel-state
                   session $ get-in db $ [] :sessions sid
-                  old-store $ or (get @*client-caches sid) nil
+                  old-store $ option:unwrap-or (get @*client-caches sid) nil
                   new-store $ twig-container db session records
                   changes $ diff-twig old-store new-store $ {} (:key :id)
                 ; when config/dev? $ println "|Changes for" sid |: changes $ count records
@@ -1069,7 +1084,7 @@
         'link $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def link
             {} (:text-decoration :underline) (:cursor :pointer)
-              :color $ hsl 240 80 80
+              :color $ ui/hsl 240 80 80
               :font-family ui/font-fancy
           :examples $ []
           :schema $ :: 'Dynamic
@@ -1090,7 +1105,7 @@
             let
                 db-map $ unsafe-coerce db $ :: 'Map 'Tag 'Dynamic
                 session-map $ unsafe-coerce
-                  or session $ {}
+                  option:unwrap-or session $ {}
                   :: 'Map 'Tag 'Dynamic
                 user-id $ &map:get session-map :user-id
                 logged-in? $ some? user-id
@@ -1102,7 +1117,7 @@
                 if logged-in?
                   let
                       user $ unsafe-coerce
-                        or
+                        option:unwrap-or
                           get-in db-map $ [] :users user-id
                           {}
                         :: 'Map 'Tag 'Dynamic
@@ -1112,7 +1127,7 @@
                         :home $ {}
                           :plan $ &map:get user :plan
                           :operations $ when (some? date)
-                            or
+                            option:unwrap-or
                               get-in user $ [] :days date
                               {}
                         :plan $ &map:get user :plan
@@ -1126,7 +1141,7 @@
                 :: 'Map 'Tag 'Dynamic
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic 'Dynamic $ :: 'List 'Dynamic
+            :args $ [] 'Dynamic (:: 'Option 'Dynamic) (:: 'List 'Dynamic)
             :features $ #{} :js-ffi
             :return $ :: 'Map 'Tag 'Dynamic
         'twig-members $ %{} 'CodeEntry (:doc |)
@@ -1135,7 +1150,7 @@
               unsafe-coerce sessions $ :: 'Map 'Number 'Dynamic
               &map:to-list
               map $ fn (pair)
-                let[] (k session) pair $ [] k $ or
+                let[] (k session) pair $ [] k $ option:unwrap-or
                   get-in users $ []
                     &map:get
                       unsafe-coerce session $ :: 'Map 'Tag 'Dynamic
@@ -1500,13 +1515,17 @@
           :schema $ :: 'Trait
         'get-date $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-date ()
-            .format (dayjs) |YYYY-MM-DD
+            ->
+              assert-type (dayjs) 'app.util/DayjsHost
+              .format! |YYYY-MM-DD
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'String)
+            :args $ []
+            :features $ #{} :js-ffi
         'get-shifted-date $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-shifted-date ()
             ->
-              unsafe-coerce (dayjs) 'app.util/DayjsHost
+              assert-type (dayjs) 'app.util/DayjsHost
               .subtract! 3 |hours
               .format! |YYYY-MM-DD
           :examples $ []
