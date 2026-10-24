@@ -12,7 +12,6 @@
     |calcit-lang/calcit-wss |0.2.32
     |calcit-lang/calcit.std |0.2.35
     |calcit-lang/js-ffi |0.2.1-alpha.10
-    |calcit-lang/lilac |0.5.9
     |calcit-lang/memof |0.0.36
     |calcit-lang/recollect |0.0.53
     |mvc-works/ws-edn.calcit |0.0.32
