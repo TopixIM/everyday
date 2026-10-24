@@ -53,13 +53,14 @@ jobs:
       - name: Validate client and server entries
         run: |
           set -euo pipefail
-          test "$(calcit --version)" = "0.27.0"
+          test "$(calcit --version)" = "0.31.0-alpha.2"
+          calcit calcit.cirru fix --workflow strict --verify --format json \
+            | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
           calcit calcit.cirru edit format
           git diff --exit-code -- calcit.cirru
           calcit calcit.cirru --check-only --keep-going
           calcit calcit.cirru --entry server --check-only --keep-going
-          calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
-          calcit calcit.cirru analyze check-public \
+          calcit calcit.cirru --check-only \
             --ns app.client --ns app.comp.container --ns app.comp.history \
             --ns app.comp.login --ns app.comp.navigation --ns app.comp.plan \
             --ns app.comp.profile --ns app.comp.today --ns app.config \
@@ -68,21 +69,13 @@ jobs:
             --ns app.updater.plan --ns app.updater.router \
             --ns app.updater.session --ns app.updater.user --ns app.util \
             --summary-only --format json
-          calcit calcit.cirru --entry server analyze check-public \
+          calcit calcit.cirru --entry server --check-only \
             --ns app.config --ns app.schema --ns app.server \
             --ns app.twig.container --ns app.twig.user --ns app.updater \
             --ns app.updater.operation --ns app.updater.plan \
             --ns app.updater.router --ns app.updater.session \
             --ns app.updater.user \
             --summary-only --format json
-          calcit calcit.cirru analyze check-types --summary-only --format json
-          calcit calcit.cirru analyze weak-types \
-            --only schema-dynamic,code-dynamic --intent unresolved \
-            --summary-only --format json
-          calcit calcit.cirru analyze deprecated --summary-only --format json
-          calcit calcit.cirru --entry server analyze deprecated --summary-only --format json
-          calcit calcit.cirru analyze dynamic-methods
-          calcit calcit.cirru --entry server analyze dynamic-methods
 
       - name: Select CDN asset path
         id: asset-path
