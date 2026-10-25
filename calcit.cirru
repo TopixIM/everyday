@@ -15,13 +15,13 @@
     'app.client $ %{} 'FileEntry
       :defs $ {}
         '*states $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *states
+          :code $ quote $ defref *states
             {} $ :states $ {}
               :cursor $ []
           :examples $ []
           :schema $ :: 'Ref 'Dynamic
         '*store $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *store nil
+          :code $ quote $ defref *store nil
           :examples $ []
           :schema $ :: 'Ref 'Dynamic
         'ParsedUrlHost $ %{} 'CodeEntry (:doc |)
@@ -96,16 +96,17 @@
             :args $ []
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target
-            option:unwrap $ query-selector |.app
+            respo.ffi.browser/narrow-element $ option:unwrap $ query-selector |.app
           :examples $ []
-          :schema $ :: 'js-ffi.browser/DomElementHost
+          :schema $ :: 'respo.dom/DomElement
         'on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-server-data (data)
-            case-default (app.schema/map-get data :kind) (println "|unknown server data kind:" data)
+            match (app.schema/map-get data :kind)
               :patch $ let
                   changes $ decode-changes $ app.schema/map-get data :data
                 when config/dev? $ js/console.log |Changes $ to-js-data changes
                 reset! *store $ patch-twig @*store changes
+              _ $ println "|unknown server data kind:" data
             , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
@@ -190,13 +191,13 @@
                     {} $ :style $ merge ui/flex ui/column
                       {} (:overflow :auto) (:align-items :center) (:padding 16) (:padding-bottom 200)
                     if (app.schema/map-get store-map :logged-in?)
-                      case-default (app.schema/map-get router :name)
-                        <> $ str router
+                      match (app.schema/map-get router :name)
                         :home $ comp-today (app.schema/map-string session :date) (app.schema/map-get router-data :plan)
                           or (app.schema/map-get router-data :operations) ({})
                         :plan $ comp-plan states router-data
                         :profile $ comp-profile (app.schema/map-get store-map :user) router-data
                         :history $ comp-history (app.schema/map-get router-data :plan) (app.schema/map-get router-data :days)
+                        _ $ <> $ str router
                       comp-login states
                   comp-status-color $ app.schema/map-string store-map :color
                   when dev? $ comp-inspect |Store store $ {} (:bottom 0) (:left 0) (:max-width |100%)
@@ -293,7 +294,7 @@
                   map $ fn (pair)
                     let[] (task-id info) pair $ let
                         found $ find
-                          -> (app.schema/as-map plan) (vals) (&set:to-list)
+                          -> (app.schema/as-map plan) (distinct-values) (&set:to-list)
                           fn (task)
                             = task-id $ app.schema/map-get task :id
                       [] task-id $ div ({})
@@ -950,11 +951,11 @@
     'app.server $ %{} 'FileEntry
       :defs $ {}
         '*client-caches $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *client-caches ({})
+          :code $ quote $ defref *client-caches ({})
           :examples $ []
           :schema $ :: 'Ref 'Dynamic
         '*initial-db $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *initial-db
+          :code $ quote $ defref *initial-db
             if (path-exists? storage-file)
               do (println "|Found local EDN data")
                 merge schema/database $ load-db storage-file
@@ -962,11 +963,11 @@
           :examples $ []
           :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
         '*reader-reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reader-reel @*reel
+          :code $ quote $ defref *reader-reel @*reel
           :examples $ []
           :schema $ :: 'Ref $ :: 'cumulo-reel.core/ReelState (:: 'Map 'Tag 'Dynamic)
         '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reel
+          :code $ quote $ defref *reel
             cumulo-reel.core/ReelState :base @*initial-db :db @*initial-db :records ([]) :merged? false
           :examples $ []
           :schema $ :: 'Ref $ :: 'cumulo-reel.core/ReelState (:: 'Map 'Tag 'Dynamic)
@@ -1076,11 +1077,12 @@
                   (:message sid msg)
                     let
                         action $ parse-cirru-edn msg
-                      case-default (app.schema/map-get action :kind) (println "|unknown action:" action)
+                      match (app.schema/map-get action :kind)
                         :op $ dispatch!
                           decode-map-as (app.schema/map-get action :op) 'Tag
                           app.schema/map-get action :data
                           , sid
+                        _ $ println "|unknown action:" action
                   (:disconnect sid)
                     do (println "|Client closed!") (dispatch! :session/disconnect nil sid)
                   _ $ println "|unknown data:" data
@@ -1174,7 +1176,7 @@
                       , user-id
                   merge base-data $ {}
                     :user $ twig-user user
-                    :router $ assoc router :data $ case-default (app.schema/map-get router :name) ({})
+                    :router $ assoc router :data $ match (app.schema/map-get router :name)
                       :home $ {}
                         :plan $ app.schema/map-get user :plan
                         :operations $ if (nil? date) nil $ or
@@ -1187,6 +1189,7 @@
                         :plan $ app.schema/map-get user :plan
                         :days $ app.schema/map-get user :days
                       :profile $ twig-members (app.schema/map-get db-map :sessions) (app.schema/map-get db-map :users)
+                      _ $ {}
                     :count $ count $ app.schema/as-map (app.schema/map-get db-map :sessions)
                     :color $ rand-hex-color!
                 , base-data
@@ -1429,7 +1432,7 @@
             find
               ->
                 app.schema/as-map $ app.schema/map-get db :users
-                vals
+                distinct-values
                 &set:to-list
                 map app.schema/as-tag-map
               fn (user)
