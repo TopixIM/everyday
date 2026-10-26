@@ -53,7 +53,7 @@ jobs:
       - name: Validate client and server entries
         run: |
           set -euo pipefail
-          test "$(calcit --version)" = "0.31.0-alpha.6"
+          test "$(calcit --version)" = "0.31.0-alpha.7"
           calcit calcit.cirru fix --workflow strict --verify --format json \
             | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
           calcit calcit.cirru edit format
