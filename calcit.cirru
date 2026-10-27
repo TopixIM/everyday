@@ -1015,8 +1015,8 @@
               println $ str "|Server started on port: " port
             ; "|init it before doing multi-threading"
             identity @*reader-reel
-            set-interval 200 $ fn () $ render-loop!
-            set-interval 600000 $ fn () $ persist-db!
+            calcit.std.time/set-interval! 200 $ fn () $ render-loop!
+            calcit.std.time/set-interval! 600000 $ fn () $ persist-db!
             on-control-c on-exit!
             , &unit
           :examples $ []
