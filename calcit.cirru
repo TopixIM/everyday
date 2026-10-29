@@ -19,23 +19,23 @@
             {} $ :states $ {}
               :cursor $ []
           :examples $ []
-          :schema $ :: 'Ref 'Dynamic
+          :schema $ quote $ Ref Dynamic
         '*store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *store nil
           :examples $ []
-          :schema $ :: 'Ref 'Dynamic
+          :schema $ quote $ Ref Dynamic
         'ParsedUrlHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ParsedUrlHost (:query 'app.client/QueryHost)
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
-          :schema $ :: 'Trait
+          :schema $ quote Trait
         'QueryHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait QueryHost
-            :host $ :: 'JsNullish 'String
-            :port $ :: 'JsNullish 'String
+            :host $ quote $ JsNullish String
+            :port $ quote $ JsNullish String
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
-          :schema $ :: 'Trait
+          :schema $ quote Trait
         'connect! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn connect! ()
             let
@@ -57,9 +57,7 @@
                   :on-close $ fn (event) (reset! *store nil) (js/console.error "|Lost connection!")
                   :on-data on-server-data
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'ws-edn.client/WsClient)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> ws-edn.client/WsClient) (:features :js-ffi)
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op)
             match op
@@ -78,8 +76,7 @@
                 ws-send! $ {} (:kind :op) (:op op-tag) (:data op-data)
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'app.schema/Op
+          :schema $ quote $ Fn app.schema/Op (-> Unit)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -92,13 +89,12 @@
               , &unit
             println "|App started!"
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+          :schema $ quote $ Fn (-> Unit)
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def mount-target
             respo.ffi.browser/narrow-element $ option:unwrap $ query-selector |.app
           :examples $ []
-          :schema $ :: 'respo.dom/DomElement
+          :schema $ quote respo.dom/DomElement
         'on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-server-data (data)
             match (app.schema/map-get data :kind)
@@ -109,9 +105,7 @@
               _ $ println "|unknown server data kind:" data
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] $ :: 'Map 'Tag 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (Map Tag Dynamic) (-> Unit) (:features :js-ffi)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
@@ -123,8 +117,7 @@
                 println "|Code updated."
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+          :schema $ quote $ Fn (-> Unit)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render! mount-target
@@ -133,9 +126,7 @@
                 , @*store
               , dispatch!
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn simulate-login! ()
             let
@@ -146,9 +137,7 @@
                 println "|Found no storage."
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.client
           :require
@@ -214,9 +203,7 @@
                       , 'Number
                     {}
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic (-> respo.schema/Component) (:features :js-ffi)
         'comp-offline $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-offline ()
             div
@@ -228,20 +215,18 @@
                     d! $ :: :effect/connect
                 <> "|Socket broken! Click to retry." $ {} (:font-family ui/font-fancy) (:font-weight 100) (:font-size 32)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ []
+          :schema $ quote $ Fn (-> respo.schema/Component)
         'comp-status-color $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-status-color (color)
             div $ {} $ :style
               {} (:width 16) (:height 16) (:position :absolute) (:top 60) (:right 8) (:background-color color) (:border-radius |8px) (:opacity 0.8)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'String
+          :schema $ quote $ Fn String (-> respo.schema/Component)
         'style-body $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-body
             {} $ :padding "|8px 16px"
           :examples $ []
-          :schema $ :: 'Map 'Tag 'String
+          :schema $ quote $ Map Tag String
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.container
           :require
@@ -280,9 +265,7 @@
                   map $ fn (pair)
                     let[] (date operations) pair $ [] date $ comp-records plan (str date) operations
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'Dynamic 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Dynamic Dynamic (-> respo.schema/Component) (:features :js-ffi)
         'comp-records $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-records (plan date operations)
             div
@@ -307,9 +290,7 @@
                                 {} $ :color $ hsl 0 0 80
                           _ $ <> $ str task-id
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'Dynamic 'String 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Dynamic String Dynamic (-> respo.schema/Component) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.history
           :require
@@ -358,14 +339,12 @@
                       :style $ merge ui/link
                       :on-click $ on-submit (app.schema/map-string state :username) (app.schema/map-string state :password) false
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] $ :: 'Map 'Tag 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (Map Tag Dynamic) (-> respo.schema/Component) (:features :js-ffi)
         'initial-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def initial-state
             {} (:username |) (:password |)
           :examples $ []
-          :schema $ :: 'Map 'Tag 'String
+          :schema $ quote $ Map Tag String
         'on-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-submit (username password signup?)
             dispatch-fn (e dispatch!)
@@ -375,9 +354,7 @@
               .setItem js/localStorage (app.schema/map-string config/site :storage-key)
                 format-cirru-edn $ [] username password
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/EventHandler)
-            :args $ [] 'String 'String 'Bool
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn String String Bool (-> respo.schema/EventHandler) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.login
           :require
@@ -400,9 +377,7 @@
                   {} $ :cursor :pointer
               <> title
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'Tag 'String 'Bool
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Tag String Bool (-> respo.schema/Component) (:features :js-ffi)
         'comp-navigation $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-navigation (logged-in? count-members router)
             div
@@ -431,8 +406,7 @@
                   =< 8 nil
                   <> $ str count-members
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'Bool 'Number $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn Bool Number (Map Tag Dynamic) (-> respo.schema/Component)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.navigation
           :require
@@ -444,26 +418,20 @@
       :defs $ {}
         'DataTransferHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait DataTransferHost (:dropEffect 'String)
-            .setData! $ :: 'Fn $ {}
-              :args $ [] 'app.comp.plan/DataTransferHost 'String 'String
-              :return 'Unit
-            .getData! $ :: 'Fn $ {}
-              :args $ [] 'app.comp.plan/DataTransferHost 'String
-              :return 'String
+            .setData! $ quote $ Fn app.comp.plan/DataTransferHost String String (-> Unit)
+            .getData! $ quote $ Fn app.comp.plan/DataTransferHost String (-> String)
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:getData! |getData) (:setData! |setData)
             :writable $ #{} :dropEffect
-          :schema $ :: 'Trait
+          :schema $ quote Trait
         'DragEventHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait DragEventHost (:dataTransfer 'app.comp.plan/DataTransferHost)
-            .preventDefault! $ :: 'Fn $ {}
-              :args $ [] 'app.comp.plan/DragEventHost
-              :return 'Unit
+            .preventDefault! $ quote $ Fn app.comp.plan/DragEventHost (-> Unit)
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} $ :preventDefault! |preventDefault
-          :schema $ :: 'Trait
+          :schema $ quote Trait
         'comp-deleted-task $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-deleted-task (sort-key task)
             div
@@ -482,9 +450,7 @@
                   :style $ {} $ :cursor :pointer
                 comp-i :shuffle 14 $ hsl 200 80 70
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'String 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn String Dynamic (-> respo.schema/Component) (:features :js-ffi)
         'comp-plan $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-plan (states plan)
             let
@@ -558,9 +524,7 @@
                           :color $ hsl 0 0 50
                 .render create-plugin
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic (-> respo.schema/Component) (:features :js-ffi)
         'comp-task $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-task (states sort-id task)
             let
@@ -613,25 +577,19 @@
                       :font-size 14
                       :cursor :pointer
                     fn (e d!)
-                      hint-fn $ {}
-                        :args $ [] 'Dynamic $ :: 'Fn
-                          {}
-                            :args $ [] 'Enum
-                            :return 'Unit
-                        :return 'Unit
+                      hint-fn $ Fn Dynamic
+                        Fn Enum $ -> Unit
+                        -> Unit
                       .show remove-plugin d! $ fn () $ d! (:: :plan/remove-one sort-id)
                   .render update-plugin
                   .render remove-plugin
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'String 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (Map Tag Dynamic) String Dynamic (-> respo.schema/Component) (:features :js-ffi)
         'deleted-task? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn deleted-task? (task)
             = true $ app.schema/map-get task :deleted?
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Bool)
-            :args $ [] 'Dynamic
+          :schema $ quote $ Fn Dynamic (-> Bool)
         'drag-event $ %{} 'CodeEntry
           :doc "|Read the native drag event from a Respo event map."
           :code $ quote $ defn drag-event (e)
@@ -639,20 +597,16 @@
               .unwrap $ get (app.schema/as-tag-map e) :event
               , 'app.comp.plan/DragEventHost
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'app.comp.plan/DragEventHost)
-            :args $ [] 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Dynamic (-> app.comp.plan/DragEventHost) (:features :js-ffi)
         'sort-by $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sort-by (xs f)
             sort xs $ fn (a b)
               &compare (f a) (f b)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'List 'T)
-              :: 'Fn $ {} (:return 'Dynamic)
-                :args $ [] 'T
-            :generics $ [] 'T
-            :return $ :: 'List 'T
+          :schema $ quote $ Fn (List T)
+            Fn T $ -> Dynamic
+            -> $ List T
+            :generics T
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.plan
           :require
@@ -707,9 +661,7 @@
                       .removeItem js/localStorage $ app.schema/map-string config/site :storage-key
                   <> "|Log out"
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'Dynamic 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Dynamic Dynamic (-> respo.schema/Component) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.profile
           :require
@@ -736,9 +688,7 @@
               =< 8 nil
               <> $ app.schema/map-string task :text
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'Dynamic 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Dynamic Dynamic (-> respo.schema/Component) (:features :js-ffi)
         'comp-today $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-today (date plan operations)
             let
@@ -779,15 +729,12 @@
                         -> done-tasks $ map $ fn (entry)
                           let[] (sort-id task operation) entry $ [] sort-id $ comp-task task operation
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] 'String 'Dynamic 'Dynamic
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn String Dynamic Dynamic (-> respo.schema/Component) (:features :js-ffi)
         'task-done? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn task-done? (operation)
             = true $ app.schema/map-get operation :done?
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Bool)
-            :args $ [] 'Dynamic
+          :schema $ quote $ Fn Dynamic (-> Bool)
         'task-operation $ %{} 'CodeEntry
           :doc "|Find today's operation of a task, defaulting to an unfinished operation."
           :code $ quote $ defn task-operation (operations task)
@@ -795,8 +742,7 @@
               app.schema/map-get operations $ app.schema/map-get task :id
               , schema/operation
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic
+          :schema $ quote $ Fn Dynamic Dynamic (-> Dynamic)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.today
           :require
@@ -822,19 +768,17 @@
                     , false
               true false
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Bool)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Bool) (:features :js-ffi)
         'dev? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def dev?
             = |dev $ option:unwrap-or (get-env |mode) |release
           :examples $ []
-          :schema $ :: 'Bool
+          :schema $ quote Bool
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def site
             {} (:port 11007) (:title |Everyday) (:icon |http://cdn.tiye.me/logo/topix.png) (:dev-ui |http://localhost:8100/main.css) (:release-ui |http://cdn.tiye.me/favored-fonts/main.css) (:cdn-url |http://cdn.tiye.me/everyday/) (:theme |#eeeeff) (:storage-key |everyday) (:storage-file |storage.cirru)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
           :require $ js-ffi.contract :refer $ [] expect-string
@@ -844,7 +788,7 @@
           :doc "|Client dispatch operations. Business ops are sent to the server as `{} (:op tag) (:data payload)`; payloads stay open EDN data."
           :code $ quote $ defenum Op (:states 'Dynamic 'Dynamic) (:effect/connect) (:effect/persist) (:reel/reset) (:reel/merge) (:session/local-date 'String) (:session/remove-message 'Dynamic) (:user/log-in 'Dynamic) (:user/sign-up 'Dynamic) (:user/log-out) (:router/change 'Dynamic) (:plan/create 'Dynamic) (:plan/update-text 'Dynamic) (:plan/remove-one 'Dynamic) (:plan/reuse 'Dynamic) (:plan/move 'Dynamic) (:operation/toggle-task 'Dynamic)
           :examples $ []
-          :schema $ :: 'EnumDef
+          :schema $ quote EnumDef
         'as-map $ %{} 'CodeEntry
           :doc "|Decode open EDN map data, treating nil as an empty map."
           :code $ quote $ defn as-map (data)
@@ -852,9 +796,8 @@
               if (nil? data) ({}) data
               :: 'Map 'Dynamic 'Dynamic
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic
-            :return $ :: 'Map 'Dynamic 'Dynamic
+          :schema $ quote $ Fn Dynamic
+            -> $ Map Dynamic Dynamic
         'as-tag-map $ %{} 'CodeEntry
           :doc "|Decode open EDN map data with Tag keys, treating nil as an empty map."
           :code $ quote $ defn as-tag-map (data)
@@ -862,9 +805,8 @@
               if (nil? data) ({}) data
               :: 'Map 'Tag 'Dynamic
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn Dynamic
+            -> $ Map Tag Dynamic
         'database $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def database
             {}
@@ -872,7 +814,7 @@
               :users $ {}
               :date nil
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote $ Map Tag Dynamic
         'get-in! $ %{} 'CodeEntry
           :doc "|Read a path that must exist in open EDN data, raising with the path when it is missing."
           :code $ quote $ defn get-in! (data path)
@@ -881,8 +823,7 @@
               (:err _)
                 raise $ str "|missing path: " path
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic $ :: 'List 'Dynamic
+          :schema $ quote $ Fn Dynamic (List Dynamic) (-> Dynamic)
         'map-get $ %{} 'CodeEntry
           :doc "|Read a field of open EDN map data, giving nil when the key is absent; wire and storage maps keep nil for missing fields."
           :code $ quote $ defn map-get (data field)
@@ -893,8 +834,7 @@
               (:some value) value
               (:none) nil
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic
+          :schema $ quote $ Fn Dynamic Dynamic (-> Dynamic)
         'map-string $ %{} 'CodeEntry
           :doc "|Read a String field of open EDN map data, giving an empty String when it is absent or nil."
           :code $ quote $ defn map-string (data field)
@@ -902,30 +842,29 @@
               or (map-get data field) |
               , 'String
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'String)
-            :args $ [] 'Dynamic 'Dynamic
+          :schema $ quote $ Fn Dynamic Dynamic (-> String)
         'notification $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def notification
             {} (:id nil) (:kind nil) (:text nil)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
         'operation $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def operation
             {} (:done? false) (:time 0)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
         'page $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def page
             {} (:id nil) (:title |) (:time nil)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
         'router $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def router
             {} (:name nil) (:title nil)
               :data $ {}
               :router nil
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
         'session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def session
             {} (:user-id nil) (:id nil) (:nickname nil)
@@ -933,19 +872,19 @@
               :messages $ {}
               :date nil
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote $ Map Tag Dynamic
         'task $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def task
             {} (:id nil) (:text |) (:time 0) (:deleted? false)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
         'user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def user
             {} (:name nil) (:id nil) (:nickname nil) (:avatar nil) (:password nil)
               :plan $ {}
               :days $ {}
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.server $ %{} 'FileEntry
@@ -953,7 +892,7 @@
         '*client-caches $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *client-caches ({})
           :examples $ []
-          :schema $ :: 'Ref 'Dynamic
+          :schema $ quote $ Ref Dynamic
         '*initial-db $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *initial-db
             if (path-exists? storage-file)
@@ -961,16 +900,18 @@
                 merge schema/database $ load-db storage-file
               do (println "|Found no data") schema/database
           :examples $ []
-          :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Ref (Map Tag Dynamic)
         '*reader-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *reader-reel @*reel
           :examples $ []
-          :schema $ :: 'Ref $ :: 'cumulo-reel.core/ReelState (:: 'Map 'Tag 'Dynamic)
+          :schema $ quote $ Ref
+            cumulo-reel.core/ReelState $ Map Tag Dynamic
         '*reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *reel
             cumulo-reel.core/ReelState :base @*initial-db :db @*initial-db :records ([]) :merged? false
           :examples $ []
-          :schema $ :: 'Ref $ :: 'cumulo-reel.core/ReelState (:: 'Map 'Tag 'Dynamic)
+          :schema $ quote $ Ref
+            cumulo-reel.core/ReelState $ Map Tag Dynamic
         'dispatch! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn dispatch! (op op-data sid)
             let
@@ -981,8 +922,7 @@
                 reset! *reel $ reel-reducer @*reel updater (:: op op-data) sid op-id op-time config/dev?
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Tag 'Dynamic 'Number
+          :schema $ quote $ Fn Tag Dynamic Number (-> Unit)
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-backup-path! ()
             let
@@ -991,17 +931,14 @@
                 str $ app.schema/map-get now :month
                 str (app.schema/map-get now :day) |-snapshot.cirru
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'String)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> String) (:features :js-ffi)
         'load-db $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn load-db (path)
             app.schema/as-tag-map $ parse-cirru-edn $ read-file path
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'String
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn String
+            -> $ Map Tag Dynamic
+            :features :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -1020,14 +957,11 @@
             on-control-c on-exit!
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
         'on-exit! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-exit! () (persist-db!) (; println "|exit code is...") (quit! 0)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+          :schema $ quote $ Fn (-> Unit)
         'persist-db! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-db! ()
             let
@@ -1038,8 +972,7 @@
               check-write-file! backup-path file-content
               , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+          :schema $ quote $ Fn (-> Unit)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println "|Code updated..")
             if (not config/dev?) (raise "|reloading only happens in dev mode")
@@ -1047,8 +980,7 @@
             reset! *reel $ refresh-reel @*reel @*initial-db replay-updater
             sync-clients! @*reader-reel
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+          :schema $ quote $ Fn (-> Unit)
         'render-loop! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-loop! ()
             when
@@ -1057,16 +989,14 @@
               sync-clients! @*reader-reel
             , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ []
+          :schema $ quote $ Fn (-> Unit)
         'replay-updater $ %{} 'CodeEntry
           :doc "|Replay recorded ops: records keep sid, op-id and op-time as open data, so decode them before calling the live updater."
           :code $ quote $ defn replay-updater (db op sid op-id op-time)
             updater db op (decode-map-as sid 'Number) (decode-map-as op-id 'String) (decode-map-as op-time 'Number)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Dynamic 'Dynamic 'Dynamic
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Dynamic Dynamic Dynamic
+            -> $ Map Tag Dynamic
         'run-server! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn run-server! (port)
             wss-serve! (&{} :port port)
@@ -1087,9 +1017,7 @@
                     do (println "|Client closed!") (dispatch! :session/disconnect nil sid)
                   _ $ println "|unknown data:" data
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'FfiTask)
-            :args $ [] 'Number
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn Number (-> FfiTask) (:features :js-ffi)
         'storage-file $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def storage-file
             let
@@ -1097,7 +1025,7 @@
                 storage-name $ if (blank? configured-name) |storage.cirru configured-name
               if (empty? calcit-dirname) (str calcit-dirname storage-name) (str calcit-dirname |/ storage-name)
           :examples $ []
-          :schema $ :: 'String
+          :schema $ quote String
         'sync-clients! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sync-clients! (reel) (begin-twig-frame!)
             wss-each! $ fn (sid)
@@ -1118,9 +1046,10 @@
                 , &unit
             finish-twig-frame!
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] $ :: 'cumulo-reel.core/ReelState (:: 'Map 'Tag 'Dynamic)
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn
+            cumulo-reel.core/ReelState $ Map Tag Dynamic
+            -> Unit
+            :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.server
           :require (app.schema :as schema)
@@ -1145,12 +1074,12 @@
               :color $ ui/hsl 240 80 80
               :font-family ui/font-fancy
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote Dynamic
         'title $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def title
             {} (:font-family ui/font-fancy) (:font-weight 300) (:font-size 24)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ quote $ Map Tag Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.style
           :require
@@ -1194,10 +1123,9 @@
                     :color $ rand-hex-color!
                 , base-data
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic (:: 'Option 'Dynamic) (:: 'List 'Dynamic)
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn Dynamic (Option Dynamic) (List Dynamic)
+            -> $ Map Tag Dynamic
+            :features :js-ffi
         'twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn twig-members (sessions users)
             let
@@ -1209,9 +1137,8 @@
                     , :name
                 pairs-map
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic 'Dynamic
-            :return $ :: 'Map 'Dynamic 'Dynamic
+          :schema $ quote $ Fn Dynamic Dynamic
+            -> $ Map Dynamic Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.twig.container
           :require
@@ -1223,9 +1150,8 @@
           :code $ quote $ defn twig-user (user)
             -> user (dissoc :password) (dissoc :plan) (dissoc :days)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] $ :: 'Map 'Tag 'Dynamic
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic)
+            -> $ Map Tag Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.twig.user (:require)
     'app.updater $ %{} 'FileEntry
@@ -1249,9 +1175,8 @@
               (:operation/toggle-task op-data) (operation/toggle-task db op-data sid op-id op-time)
               _ $ do (println "|Unknown op:" op) db
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require ([] app.updater.session :as session) ([] app.updater.user :as user) ([] app.updater.router :as router) ([] app.updater.plan :as plan) ([] app.updater.operation :as operation)
@@ -1268,10 +1193,9 @@
               app.schema/as-tag-map $ assoc-in db path $ not
                 = true $ .unwrap-or (get-in db path) false
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
+            :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.operation
     'app.updater.plan $ %{} 'FileEntry
@@ -1290,10 +1214,9 @@
                     assoc plan-map new-key $ merge (app.schema/as-tag-map schema/task)
                       {} (:id op-id) (:time op-time) (:text op-data)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
+            :features :js-ffi
         'move $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn move (db op-data sid op-id op-time)
             let
@@ -1314,10 +1237,9 @@
                       assoc new-key $ .unwrap $ get plan-map from-id
                       dissoc from-id
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
+            :features :js-ffi
         'remove-one $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn remove-one (db op-data sid op-id op-time)
             let
@@ -1325,9 +1247,8 @@
                 user-id $ app.schema/get-in! db $ [] :sessions sid :user-id
               app.schema/as-tag-map $ assoc-in db ([] :users user-id :plan sort-id :deleted?) true
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
         'reuse $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reuse (db op-data sid op-id op-time)
             let
@@ -1335,9 +1256,8 @@
                 user-id $ app.schema/get-in! db $ [] :sessions sid :user-id
               app.schema/as-tag-map $ assoc-in db ([] :users user-id :plan sort-id :deleted?) false
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
         'update-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn update-text (db op-data sid op-id op-time)
             let
@@ -1351,10 +1271,9 @@
                     assoc :text text
                     assoc :time op-time
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
+            :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.plan
           :require ([] app.schema :as schema)
@@ -1365,9 +1284,8 @@
           :code $ quote $ defn change (db op-data sid op-id op-time)
             assoc-in db ([] :sessions sid :router) op-data
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.router
     'app.updater.session $ %{} 'FileEntry
@@ -1377,23 +1295,20 @@
             assoc-in db ([] :sessions sid)
               merge schema/session $ {} $ :id sid
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
         'disconnect $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn disconnect (db op-data sid op-id op-time)
             update db :sessions $ fn (session) (dissoc session sid)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
         'local-date $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn local-date (db op-data sid op-id op-time)
             assoc-in db ([] :sessions sid :date) op-data
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
         'remove-message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn remove-message (db op-data sid op-id op-time)
             app.schema/as-tag-map $ update-in db ([] :sessions sid :messages)
@@ -1402,10 +1317,9 @@
                   app.schema/as-map $ .unwrap-or messages nil
                   app.schema/map-get op-data :id
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
+            :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.session
           :require $ [] app.schema :as schema
@@ -1417,16 +1331,14 @@
               app.schema/as-map $ app.schema/map-get session :messages
               , op-id $ {} (:id op-id) (:text text)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'String 'String
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) String String
+            -> $ Map Tag Dynamic
         'as-user-map $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn as-user-map (user) (app.schema/as-tag-map user)
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] 'Dynamic
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn Dynamic
+            -> $ Map Tag Dynamic
+            :features :js-ffi
         'find-user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-user (db username)
             find
@@ -1436,14 +1348,11 @@
                 &set:to-list
                 map app.schema/as-tag-map
               fn (user)
-                hint-fn $ {}
-                  :args $ [] $ :: 'Map 'Tag 'Dynamic
-                  :return 'Bool
+                hint-fn $ Fn (Map Tag Dynamic) (-> Bool)
                 matches-username? user username
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'String
-            :return $ :: 'Option $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) String
+            -> $ Option $ Map Tag Dynamic
         'log-in $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn log-in (db op-data sid op-id op-time)
             let[] (username password)
@@ -1463,23 +1372,20 @@
                         (:none)
                           add-message session-map op-id $ str "|No user named: " username
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
+            :features :js-ffi
         'log-out $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn log-out (db op-data sid op-id op-time)
             assoc-in db ([] :sessions sid :user-id) nil
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
         'matches-username? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn matches-username? (user username)
             = username $ app.schema/map-get user :name
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Bool)
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'String
+          :schema $ quote $ Fn (Map Tag Dynamic) String (-> Bool)
         'sign-up $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sign-up (db op-data sid op-id op-time)
             let[] (username password)
@@ -1500,10 +1406,9 @@
                         :avatar nil
                     app.schema/as-tag-map
           :examples $ []
-          :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) 'Dynamic 'Number 'String 'Number
-            :features $ #{} :js-ffi
-            :return $ :: 'Map 'Tag 'Dynamic
+          :schema $ quote $ Fn (Map Tag Dynamic) Dynamic Number String Number
+            -> $ Map Tag Dynamic
+            :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.user
           :require
@@ -1513,25 +1418,19 @@
       :defs $ {}
         'DayjsHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait DayjsHost
-            .subtract! $ :: 'Fn $ {}
-              :args $ [] 'app.util/DayjsHost 'Number 'String
-              :return 'app.util/DayjsHost
-            .format! $ :: 'Fn $ {}
-              :args $ [] 'app.util/DayjsHost 'String
-              :return 'String
+            .subtract! $ quote $ Fn app.util/DayjsHost Number String (-> app.util/DayjsHost)
+            .format! $ quote $ Fn app.util/DayjsHost String (-> String)
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object) (:target :browser)
             :names $ {} (:format! |format) (:subtract! |subtract)
-          :schema $ :: 'Trait
+          :schema $ quote Trait
         'get-date $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-date ()
             ->
               js-cast (dayjs) 'app.util/DayjsHost
               .format! |YYYY-MM-DD
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'String)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> String) (:features :js-ffi)
         'get-shifted-date $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-shifted-date ()
             ->
@@ -1539,9 +1438,7 @@
               .subtract! 3 |hours
               .format! |YYYY-MM-DD
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'String)
-            :args $ []
-            :features $ #{} :js-ffi
+          :schema $ quote $ Fn (-> String) (:features :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.util
           :require $ [] |dayjs :default dayjs

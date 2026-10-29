@@ -46,14 +46,14 @@ jobs:
       - name: Resolve immutable dependencies
         run: |
           set -euo pipefail
-          caps --ci
+          caps --strict --ci
           yarn install --immutable
           caps verify --toolchain
 
       - name: Validate client and server entries
         run: |
           set -euo pipefail
-          test "$(calcit --version)" = "0.31.0"
+          test "$(calcit --version)" = "0.32.1"
           calcit calcit.cirru fix --workflow strict --verify --format json \
             | jq -e '.data.workflow.status == "passed" and .diagnostics == []'
           calcit calcit.cirru edit format
