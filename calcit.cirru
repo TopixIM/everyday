@@ -108,16 +108,35 @@
           :schema $ quote respo.dom/DomElement
         'on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-server-data (data)
-            match
-              .unwrap-or (app.schema/map-get data :kind) :unknown
-              :patch $ let
-                  changes $ decode-changes $ .unwrap (app.schema/map-get data :data)
-                  patched $ match @*store
-                    (:some current) (patch-twig current changes)
-                    (:none) (patch-twig nil changes)
-                when config/dev? $ js/console.log |Changes $ to-js-data changes
-                reset! *store $ Option :some $ decode-map-as patched (Map Tag Dynamic)
-              _ $ println "|unknown server data kind:" data
+            try
+              match
+                .unwrap-or (app.schema/map-get data :kind) :unknown
+                :patch $ let
+                    changes $ decode-changes $ .unwrap (app.schema/map-get data :data)
+                    patched $ match @*store
+                      (:some current) (try-patch-twig current changes)
+                      (:none)
+                        match (destruct-list changes)
+                          (:some first-change remaining)
+                            match first-change
+                              (:replace root) (try-patch-twig root remaining)
+                              _ $ raise "|Expected initial root replacement"
+                          (:none) (raise "|Expected initial store patch")
+                  match patched
+                    (:ok value)
+                      match
+                        try-decode-map-as value $ Map Tag Dynamic
+                        (:ok store)
+                          do
+                            when config/dev? $ js/console.log |Changes $ to-js-data changes
+                            reset! *store $ Option :some store
+                        (:err detail) (eprintln "|Rejected store data:" detail)
+                    (:err detail)
+                      eprintln "|Rejected store patch:" $ patch-error-message detail
+                _ $ println "|Unknown server data kind"
+              fn (detail)
+                hint-fn $ Fn String $ -> Unit
+                eprintln "|Rejected server message:" detail
             , &unit
           :examples $ []
           :schema $ quote $ Fn (Map Tag Dynamic) (-> Unit) (:features :js-ffi)
@@ -168,7 +187,7 @@
             app.schema :as schema
             app.config :as config
             ws-edn.client :refer $ ws-connect! ws-send!
-            recollect.patch :refer $ patch-twig
+            recollect.patch :refer $ try-patch-twig patch-error-message
             recollect.schema :refer $ decode-changes
             cumulo-util.core :refer $ on-page-touch
             |url-parse :default url-parse
@@ -1272,7 +1291,7 @@
                 reset! *reel $ reel-reducer @*reel updater
                   match op-data
                     (:some payload) (:: op payload)
-                    (:none) (:: op nil)
+                    (:none) (:: op)
                   , sid op-id op-time config/dev?
             , &unit
           :examples $ []
@@ -1334,15 +1353,16 @@
             if (not config/dev?) (raise "|reloading only happens in dev mode")
             clear-twig-caches!
             reset! *reel $ refresh-reel @*reel @*initial-db replay-updater
-            sync-clients! @*reader-reel
+            render-loop!
           :examples $ []
           :schema $ quote $ Fn (-> Unit)
         'render-loop! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-loop! ()
-            when
-              not $ identical? @*reader-reel @*reel
-              reset! *reader-reel @*reel
-              sync-clients! @*reader-reel
+            let
+                snapshot @*reel
+              when
+                not $ identical? @*reader-reel snapshot
+                when (sync-clients! snapshot) (reset! *reader-reel snapshot)
             , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit)
@@ -1388,29 +1408,41 @@
           :examples $ []
           :schema $ quote String
         'sync-clients! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn sync-clients! (reel) (begin-twig-frame!)
-            wss-each! $ fn (sid)
-              let
-                  db $ :db reel
-                  records $ :records reel
-                  session $ option:and-then (app.schema/map-get db :sessions)
-                    fn (sessions)
-                      app.schema/map-get (app.schema/as-map sessions) sid
-                  new-store $ twig-container db (option:map session app.schema/as-tag-map) (count records)
-                  options $ {} $ :key :id
-                  changes $ match (get @*client-caches sid)
-                    (:some old-store) (diff-twig old-store new-store options)
-                    (:none) (diff-twig nil new-store options)
-                when
-                  not $ empty? changes
-                  wss-send! sid $ format-cirru-edn $ {} (:kind :patch) (:data changes)
-                  swap! *client-caches assoc sid new-store
-                , &unit
-            finish-twig-frame!
+          :code $ quote $ defn sync-clients! (reel)
+            let
+                db $ :db reel
+                sessions $ decode-map-as
+                  .unwrap $ app.schema/map-get db :sessions
+                  Map Number Dynamic
+                reel-length $ .len $ :records reel
+                options $ {} $ :key :id
+                complete? $ ref true
+              begin-twig-frame!
+              .each
+                .to-list $ .keys sessions
+                fn (sid)
+                  hint-fn $ Fn Number $ -> Unit
+                  let
+                      session $ app.schema/as-tag-map $ .unwrap (get sessions sid)
+                      new-store $ twig-container db (Option :some session) reel-length
+                      changes $ match (get @*client-caches sid)
+                        (:some old-store) (diff-twig old-store new-store options)
+                        (:none) (diff-twig nil new-store options)
+                    when
+                      not $ empty? changes
+                      match
+                        wss-send! sid $ format-cirru-edn $ {} (:kind :patch) (:data changes)
+                        (:accepted) (swap! *client-caches assoc sid new-store)
+                        (:backpressured) (reset! complete? false)
+                        (:too-large) (eprintln "|Client patch is too large:" sid)
+                        (:closed) &unit
+                    , &unit
+              finish-twig-frame!
+              , @complete?
           :examples $ []
           :schema $ quote $ Fn
             cumulo-reel.core/ReelState $ Map Tag Dynamic
-            -> Unit
+            -> Bool
             :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.server
@@ -1420,7 +1452,7 @@
             app.config :as config
             app.twig.container :refer $ twig-container
             recollect.diff :refer $ diff-twig
-            wss.core :refer $ wss-serve! wss-send! wss-each!
+            wss.core :refer $ wss-serve! wss-send!
             recollect.twig :refer $ clear-twig-caches!
             recollect.memo :refer $ begin-twig-frame! finish-twig-frame!
             app.$meta :refer $ calcit-dirname
@@ -1561,7 +1593,9 @@
         %{} 'CodeEntry (:doc |)
           :code $ quote $ defn updater (db op sid op-id op-time)
             match op
+              (:session/connect) (session/connect db sid)
               (:session/connect _payload) (session/connect db sid)
+              (:session/disconnect) (session/disconnect db sid)
               (:session/disconnect _payload) (session/disconnect db sid)
               (:user/log-in op-data)
                 user/log-in db
@@ -1571,6 +1605,7 @@
                 user/sign-up db
                   app.schema/read-credentials $ decode-map-as op-data $ List String
                   , sid op-id op-time
+              (:user/log-out) (user/log-out db sid)
               (:user/log-out _payload) (user/log-out db sid)
               (:session/remove-message op-data)
                 match
