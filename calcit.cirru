@@ -135,8 +135,8 @@
           :schema $ quote $ Fn (-> Unit)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target
-              match @*store
+            render-with! mount-target
+              fn () $ match @*store
                 (:some store)
                   comp-container
                     .unwrap-or
@@ -162,7 +162,7 @@
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.client
           :require
-            respo.core :refer $ render! clear-cache! realize-ssr!
+            respo.core :refer $ render-with! clear-cache!
             respo.cursor :refer $ update-states
             app.comp.container :refer $ comp-container comp-offline
             app.schema :as schema
