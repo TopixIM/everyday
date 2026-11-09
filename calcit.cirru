@@ -228,8 +228,10 @@
                             comp-plan states $ app.schema/read-plan router-data
                           (:profile)
                             comp-profile
-                              .unwrap-or (app.schema/map-get store-map :user) ({})
-                              , router-data
+                              app.schema/map-string
+                                .unwrap-or (app.schema/map-get store-map :user) ({})
+                                , :name
+                              app.schema/read-profile-members router-data
                           (:history)
                             comp-history
                               app.schema/read-plan $ .unwrap-or (app.schema/map-get router-data :plan) ({})
@@ -698,13 +700,13 @@
     'app.comp.profile $ %{} 'FileEntry
       :defs $ {} $ 'comp-profile
         %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-profile (user members)
+          :code $ quote $ defcomp comp-profile (name members)
             div
               {} $ :style $ merge ui/flex
                 {} (:padding 16) (:width |60%)
               div
                 {} $ :style $ {} (:font-family ui/font-fancy) (:font-size 32) (:font-weight 100)
-                <> $ str "|Hello! " $ app.schema/map-string user :name
+                <> $ str "|Hello! " name
               space-y 16
               div
                 {} $ :style ui/row
@@ -712,14 +714,14 @@
                 space-x 8
                 list->
                   {} $ :style ui/row
-                  -> (app.schema/as-map members) (&map:to-list)
+                  -> members (&map:to-list)
                     map $ fn (pair)
                       let[] (k username) pair $ [] k $ div
                         {} $ :style $ {} (:padding "|0 8px")
                           :border $ str "|1px solid " $ hsl 0 0 80
                           :border-radius |16px
                           :margin "|0 4px"
-                        <> $ str username
+                        <> $ .unwrap-or username |
               space-y 48
               div ({})
                 button
@@ -737,7 +739,10 @@
                       .removeItem js/localStorage $ :storage-key config/site
                   <> "|Log out"
           :examples $ []
-          :schema $ quote $ Fn Dynamic Dynamic (-> respo.schema/Component) (:features :js-ffi)
+          :schema $ quote $ Fn String
+            Map app.schema/DataKey $ Option String
+            -> respo.schema/Component
+            :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.profile
           :require
@@ -1161,6 +1166,18 @@
                   42 $ {} $ :done? true
                   |42 $ {} $ :done? false
             :tags $ #{} :unit
+        'read-profile-members $ %{} 'CodeEntry
+          :doc "|Project legacy profile member values to display names, keeping unnamed members and original keys."
+          :code $ quote $ defn read-profile-members (members)
+            filter-map-kv members $ fn (key name)
+              hint-fn $ Fn app.schema/DataKey T $ ->
+                MapEntryDecision app.schema/DataKey $ Option String
+              MapEntryDecision :keep key $ if (nil? name) (Option :none)
+                Option :some $ str name
+          :examples $ []
+          :schema $ quote $ Fn (Map app.schema/DataKey T)
+            -> $ Map app.schema/DataKey $ Option String
+            :generics T
         'read-task-session $ %{} 'CodeEntry
           :doc "|Read only the session fields needed by task reducers."
           :code $ quote $ defn read-task-session (db sid)
@@ -1194,7 +1211,8 @@
         '*client-caches $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *client-caches ({})
           :examples $ []
-          :schema $ quote $ Ref Dynamic
+          :schema $ quote $ Ref
+            Map Number $ Map Tag Dynamic
         '*initial-db $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *initial-db
             if (path-exists? storage-file)
@@ -1345,7 +1363,7 @@
                   records $ :records reel
                   session $ option:and-then (app.schema/map-get db :sessions)
                     fn (sessions) (app.schema/map-get sessions sid)
-                  new-store $ twig-container db session records
+                  new-store $ twig-container db (option:map session app.schema/as-tag-map) (count records)
                   options $ {} $ :key :id
                   changes $ match (get @*client-caches sid)
                     (:some old-store) (diff-twig old-store new-store options)
@@ -1399,10 +1417,9 @@
     'app.twig.container $ %{} 'FileEntry
       :defs $ {}
         'twig-container $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn twig-container (db session records)
+          :code $ quote $ defn twig-container (db session record-count)
             let
-                db-map $ app.schema/as-tag-map db
-                session-map $ .unwrap-or (option:map session app.schema/as-tag-map) ({})
+                session-map $ .unwrap-or session $ {}
                 user-id $ app.schema/map-get session-map :user-id
                 router $ .unwrap-or
                   option:map (app.schema/map-get session-map :router) app.schema/as-tag-map
@@ -1410,13 +1427,13 @@
                 base-data $ {}
                   :logged-in? $ .some? user-id
                   :session session-map
-                  :reel-length $ count records
+                  :reel-length record-count
                 date $ app.schema/map-get session-map :date
-                sessions $ .unwrap-or (app.schema/map-get db-map :sessions) ({})
+                sessions $ .unwrap-or (app.schema/map-get db :sessions) ({})
               match user-id
                 (:some id)
                   let
-                      users $ .unwrap-or (app.schema/map-get db-map :users) ({})
+                      users $ .unwrap-or (app.schema/map-get db :users) ({})
                       user $ .unwrap-or
                         option:map
                           app.schema/map-get users $ decode-map-as id String
@@ -1444,9 +1461,11 @@
                       :color $ rand-hex-color!
                 (:none) base-data
           :examples $ []
-          :schema $ quote $ Fn Dynamic (Option Dynamic) (List Dynamic)
-            -> $ Map Tag Dynamic
-            :features :js-ffi
+          :schema $ quote $ Fn (Map Tag Dynamic)
+            Option $ Map Tag Dynamic
+            , Number
+              -> $ Map Tag Dynamic
+              :features :js-ffi
         'twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn twig-members (sessions users)
             let
@@ -1465,6 +1484,30 @@
           :examples $ []
           :schema $ quote $ Fn Dynamic Dynamic
             -> $ Map app.schema/DataKey Dynamic
+          :tests $ [] $ %{} 'TestEntry (:name |profile-wire-keeps-guests-and-mixed-keys)
+            :code $ quote $ let
+                sessions $ {}
+                  7 $ {} $ :user-id |member
+                  |guest $ {}
+                  :legacy $ {} $ :user-id |legacy
+                users $ {}
+                  |member $ {} $ :name |Alice
+                  |legacy $ {} $ :name 42
+                raw $ twig-members sessions users
+                names $ app.schema/read-profile-members raw
+              assert= (Option :some |Alice) (get raw 7)
+              assert= (Option :some nil) (get raw |guest)
+              assert=
+                Option :some $ Option :some |Alice
+                get names 7
+              assert=
+                Option :some $ Option :none
+                get names |guest
+              assert=
+                Option :some $ Option :some |42
+                get names :legacy
+              assert= | $ str nil
+            :tags $ #{} :unit
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.twig.container
           :require
@@ -1750,8 +1793,9 @@
                     = (Option :some username) (app.schema/map-get user :name)
               option:map entry $ fn (user)
                 let
-                    id $ read-account-text user :id
-                    password-hash $ read-account-text user :password
+                    fields $ app.schema/as-map user
+                    id $ read-account-text fields :id
+                    password-hash $ read-account-text fields :password
                   AccountAuth :id id :password-hash password-hash
           :examples $ []
           :schema $ quote $ Fn (Map Tag Dynamic) String
@@ -1789,14 +1833,15 @@
             -> $ Map Tag Dynamic
         'read-account-text $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-account-text (account field)
-            option:and-then (app.schema/map-get account field)
+            option:and-then (get account field)
               fn (raw)
                 match (try-decode-map-as raw String)
                   (:ok text) (Option :some text)
                   (:err _) (Option :none)
           :examples $ []
-          :schema $ quote $ Fn Dynamic Tag
+          :schema $ quote $ Fn (Map app.schema/DataKey T) Tag
             -> $ Option String
+            :generics T
         'sign-up $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sign-up (db credentials sid op-id op-time)
             let
