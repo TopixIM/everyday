@@ -250,9 +250,9 @@
                   {}
                   fn (info d!)
                     match
-                      app.schema/map-get (app.schema/as-map info) :id
+                      app.schema/read-message-id $ app.schema/as-map info
                       (:some id)
-                        d! $ app.schema/Op :session/remove-message $ decode-map-as id String
+                        d! $ app.schema/Op :session/remove-message id
                       (:none) &unit
                 if dev?
                   comp-reel
@@ -1128,6 +1128,15 @@
           :schema $ quote $ Fn (Map app.schema/DataKey T)
             -> $ Map app.schema/DataKey $ Map app.schema/DataKey Bool
             :generics T
+        'read-message-id $ %{} 'CodeEntry
+          :doc "|Read a String message ID from the existing message or removal frame. Missing IDs are ignored."
+          :code $ quote $ defn read-message-id (fields)
+            option:map (map-get fields :id)
+              fn (id) (decode-map-as id String)
+          :examples $ []
+          :schema $ quote $ Fn (Map app.schema/DataKey T)
+            -> $ Option String
+            :generics T
         'read-page $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-page (name)
             match name
@@ -1256,12 +1265,18 @@
               when config/dev? $ if
                 contains? (#{} :user/log-in :user/sign-up) op
                 println |Dispatch! op sid
-                println |Dispatch! op op-data sid
+                match op-data
+                  (:some payload) (println |Dispatch! op payload sid)
+                  (:none) (println |Dispatch! op sid)
               if (= op :effect/persist) (persist-db!)
-                reset! *reel $ reel-reducer @*reel updater (:: op op-data) sid op-id op-time config/dev?
+                reset! *reel $ reel-reducer @*reel updater
+                  match op-data
+                    (:some payload) (:: op payload)
+                    (:none) (:: op nil)
+                  , sid op-id op-time config/dev?
             , &unit
           :examples $ []
-          :schema $ quote $ Fn Tag Dynamic Number (-> Unit)
+          :schema $ quote $ Fn Tag (Option T) Number (-> Unit) (:generics T)
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-backup-path! ()
             let
@@ -1344,7 +1359,9 @@
               fn (data)
                 match data
                   (:connect sid)
-                    do (dispatch! :session/connect nil sid) (println "|New client.")
+                    do
+                      dispatch! :session/connect (Option :none) sid
+                      println "|New client."
                   (:message sid msg)
                     let
                         action $ app.schema/as-map $ parse-cirru-edn msg
@@ -1354,12 +1371,11 @@
                             op $ decode-map-as
                               .unwrap $ app.schema/map-get action :op
                               , Tag
-                          match (app.schema/map-get action :data)
-                            (:some payload) (dispatch! op payload sid)
-                            (:none) (dispatch! op nil sid)
+                          dispatch! op (app.schema/map-get action :data) sid
                         _ $ println "|unknown action:" action
                   (:disconnect sid)
-                    do (println "|Client closed!") (dispatch! :session/disconnect nil sid)
+                    do (println "|Client closed!")
+                      dispatch! :session/disconnect (Option :none) sid
                   _ $ println "|unknown data:" data
           :examples $ []
           :schema $ quote $ Fn Number (-> FfiTask) (:features :js-ffi)
@@ -1472,7 +1488,7 @@
                             {} (:plan plan) (:operations nil)
                         :plan plan
                         :history $ {} (:plan plan) (:days days)
-                        :profile $ twig-members sessions users
+                        :profile $ twig-members (app.schema/as-map sessions) (app.schema/as-map users)
                         _ $ {}
                       :count $ count $ app.schema/as-map sessions
                       :color $ rand-hex-color!
@@ -1485,24 +1501,22 @@
               :features :js-ffi
         'twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn twig-members (sessions users)
-            let
-                users-map $ app.schema/as-map users
-              filter-map-kv (app.schema/as-map sessions)
-                fn (key session)
-                  hint-fn $ Fn app.schema/DataKey Dynamic $ -> (MapEntryDecision app.schema/DataKey Dynamic)
-                  let
-                      user $ option:and-then
-                        app.schema/map-get (app.schema/as-map session) :user-id
-                        fn (id)
-                          app.schema/map-get users-map $ decode-map-as id String
-                    match
-                      option:and-then user $ fn (data)
-                        app.schema/map-get (app.schema/as-map data) :name
-                      (:some name) (MapEntryDecision :keep key name)
-                      (:none) (MapEntryDecision :keep key nil)
+            filter-map-kv sessions $ fn (key session)
+              hint-fn $ Fn app.schema/DataKey S $ -> (MapEntryDecision app.schema/DataKey Dynamic)
+              let
+                  user $ option:and-then
+                    app.schema/map-get (app.schema/as-map session) :user-id
+                    fn (id)
+                      app.schema/map-get users $ decode-map-as id String
+                match
+                  option:and-then user $ fn (data)
+                    app.schema/map-get (app.schema/as-map data) :name
+                  (:some name) (MapEntryDecision :keep key name)
+                  (:none) (MapEntryDecision :keep key nil)
           :examples $ []
-          :schema $ quote $ Fn Dynamic Dynamic
+          :schema $ quote $ Fn (Map app.schema/DataKey S) (Map app.schema/DataKey U)
             -> $ Map app.schema/DataKey Dynamic
+            :generics S U
           :tests $ [] $ %{} 'TestEntry (:name |profile-wire-keeps-guests-and-mixed-keys)
             :code $ quote $ let
                 sessions $ {}
@@ -1512,7 +1526,7 @@
                 users $ {}
                   |member $ {} $ :name |Alice
                   |legacy $ {} $ :name 42
-                raw $ twig-members sessions users
+                raw $ twig-members (app.schema/as-map sessions) (app.schema/as-map users)
                 names $ app.schema/read-profile-members raw
               assert= (Option :some |Alice) (get raw 7)
               assert= (Option :some nil) (get raw |guest)
@@ -1560,9 +1574,8 @@
               (:user/log-out _payload) (user/log-out db sid)
               (:session/remove-message op-data)
                 match
-                  app.schema/map-get (app.schema/as-map op-data) :id
-                  (:some id)
-                    session/remove-message db (decode-map-as id String) sid
+                  app.schema/read-message-id $ app.schema/as-map op-data
+                  (:some id) (session/remove-message db id sid)
                   (:none) db
               (:session/local-date op-data)
                 session/local-date db (decode-map-as op-data String) sid
@@ -1625,6 +1638,12 @@
                     :: :user/log-in $ [] |fixture-user |wrong-pass
                     , 2 |wrong 1
                   logged-in $ updater rejected (:: :user/log-in credentials) 2 |correct 2
+                  ignored $ updater rejected
+                    :: :session/remove-message $ {}
+                    , 2 |ignored 2
+                  dismissed $ updater ignored
+                    :: :session/remove-message $ {} $ :id |wrong
+                    , 2 |dismissed 3
                 assert= credentials $ app.schema/credentials->wire $ app.schema/read-credentials credentials
                 assert= (Result :ok |fixture-id)
                   get-in created $ [] :sessions 1 :user-id
@@ -1633,6 +1652,10 @@
                   get-in rejected $ [] :sessions 2 :messages |wrong :text
                 assert= (Result :ok |fixture-id)
                   get-in logged-in $ [] :sessions 2 :user-id
+                assert= rejected ignored
+                assert=
+                  Result :ok $ {}
+                  get-in dismissed $ [] :sessions 2 :messages
               :tags $ #{} :unit
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
@@ -1799,14 +1822,12 @@
                 {}
               , op-id $ {} (:id op-id) (:text text)
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) String String
+          :schema $ quote $ Fn (Map Tag T) String String
             -> $ Map Tag Dynamic
+            :generics T
         'find-user $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn find-user (db username)
+          :code $ quote $ defn find-user (users username)
             let
-                users $ .unwrap-or
-                  option:map (get db :users) app.schema/as-map
-                  {}
                 entry $ find
                   &set:to-list $ distinct-values users
                   fn (user)
@@ -1819,13 +1840,18 @@
                     password-hash $ read-account-text fields :password
                   AccountAuth :id id :password-hash password-hash
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) String
+          :schema $ quote $ Fn (Map app.schema/DataKey T) String
             -> $ Option app.updater.user/AccountAuth
+            :generics T
         'log-in $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn log-in (db credentials sid op-id op-time)
             let
                 username $ :username credentials
-                maybe-user $ find-user db username
+                maybe-user $ find-user
+                  .unwrap-or
+                    option:map (get db :users) app.schema/as-map
+                    {}
+                  , username
               app.schema/as-tag-map $ update-in db ([] :sessions sid)
                 fn (session)
                   let
@@ -1868,7 +1894,12 @@
             let
                 username $ :username credentials
                 password $ :password credentials
-              match (find-user db username)
+              match
+                find-user
+                  .unwrap-or
+                    option:map (get db :users) app.schema/as-map
+                    {}
+                  , username
                 (:some _)
                   app.schema/as-tag-map $ update-in db ([] :sessions sid)
                     fn (session)
