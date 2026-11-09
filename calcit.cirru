@@ -222,20 +222,20 @@
                         match page
                           (:home)
                             comp-today (app.schema/map-string session :date)
-                              app.schema/read-plan $ .unwrap-or (app.schema/map-get router-data :plan) ({})
-                              app.schema/read-completions $ .unwrap-or (app.schema/map-get router-data :operations) ({})
+                              app.schema/read-plan $ app.schema/as-map $ .unwrap-or (app.schema/map-get router-data :plan) ({})
+                              app.schema/read-completions $ app.schema/as-map $ .unwrap-or (app.schema/map-get router-data :operations) ({})
                           (:plan)
                             comp-plan states $ app.schema/read-plan router-data
                           (:profile)
                             comp-profile
                               app.schema/map-string
-                                .unwrap-or (app.schema/map-get store-map :user) ({})
+                                app.schema/as-map $ .unwrap-or (app.schema/map-get store-map :user) ({})
                                 , :name
                               app.schema/read-profile-members router-data
                           (:history)
                             comp-history
-                              app.schema/read-plan $ .unwrap-or (app.schema/map-get router-data :plan) ({})
-                              app.schema/read-history $ .unwrap-or (app.schema/map-get router-data :days) ({})
+                              app.schema/read-plan $ app.schema/as-map $ .unwrap-or (app.schema/map-get router-data :plan) ({})
+                              app.schema/read-history $ app.schema/as-map $ .unwrap-or (app.schema/map-get router-data :days) ({})
                       (:none)
                         <> $ str router
                     comp-login states
@@ -249,7 +249,8 @@
                     Map String Dynamic
                   {}
                   fn (info d!)
-                    match (app.schema/map-get info :id)
+                    match
+                      app.schema/map-get (app.schema/as-map info) :id
                       (:some id)
                         d! $ app.schema/Op :session/remove-message $ decode-map-as id String
                       (:none) &unit
@@ -1042,40 +1043,43 @@
                 assert= move $ encode-task-change $ decode-map-as move app.schema/TaskMove
             :tags $ #{} :unit
         'map-get $ %{} 'CodeEntry
-          :doc "|Read a field of an open EDN map. Missing and explicit nil both become None."
+          :doc "|Read a field from a checked Map. Missing and explicit nil both become None."
           :code $ quote $ defn map-get (data field)
-            option:and-then
-              get (as-map data) field
-              , nil->option
+            option:and-then (get data field) nil->option
           :examples $ []
-          :schema $ quote $ Fn Dynamic app.schema/DataKey
-            -> $ Option Dynamic
+          :schema $ quote $ Fn (Map app.schema/DataKey T) app.schema/DataKey
+            -> $ Option T
+            :generics T
           :tests $ [] $ %{} 'TestEntry (:name |preserves-false-and-normalizes-nil)
             :code $ quote $ do
               assert= (Option :some false)
                 map-get
-                  {} $ :flag false
+                  as-map $ {} $ :flag false
                   , :flag
               assert= (Option :none)
                 map-get
-                  {} $ :flag nil
+                  as-map $ {} $ :flag nil
                   , :flag
               assert= (Option :none)
-                map-get ({}) :flag
+                map-get
+                  as-map $ {}
+                  , :flag
               let
                   entries $ {} (|task false) (42 |session) (:flag true)
-                assert= (Option :some false) (map-get entries |task)
-                assert= (Option :some |session) (map-get entries 42)
+                assert= (Option :some false)
+                  map-get (as-map entries) |task
+                assert= (Option :some |session)
+                  map-get (as-map entries) 42
             :tags $ #{} :unit
         'map-string $ %{} 'CodeEntry
           :doc "|Read a String field of open EDN data, defaulting to empty text."
           :code $ quote $ defn map-string (data field)
-            match (map-get data field)
+            match (get data field)
               (:some value)
                 decode-map-as (or value |) String
               (:none) |
           :examples $ []
-          :schema $ quote $ Fn Dynamic Tag (-> String)
+          :schema $ quote $ Fn (Map app.schema/DataKey T) Tag (-> String) (:generics T)
         'page->wire $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn page->wire (page)
             {} $ :name $ match page
@@ -1097,14 +1101,15 @@
               assert= (Option :none) (read-page :unknown)
             :tags $ #{} :unit
         'read-completions $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn read-completions (raw)
-            filter-map-kv (as-map raw)
-              fn (key operation)
-                hint-fn $ Fn app.schema/DataKey Dynamic $ -> (MapEntryDecision app.schema/DataKey Bool)
-                MapEntryDecision :keep key $ = (Option :some true) (map-get operation :done?)
+          :code $ quote $ defn read-completions (entries)
+            filter-map-kv entries $ fn (key operation)
+              hint-fn $ Fn app.schema/DataKey T $ -> (MapEntryDecision app.schema/DataKey Bool)
+              MapEntryDecision :keep key $ = (Option :some true)
+                get (as-map operation) :done?
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn (Map app.schema/DataKey T)
             -> $ Map app.schema/DataKey Bool
+            :generics T
         'read-credentials $ %{} 'CodeEntry
           :doc "|Project the two fields of a checked legacy username/password list."
           :code $ quote $ defn read-credentials (fields)
@@ -1114,15 +1119,15 @@
           :examples $ []
           :schema $ quote $ Fn (List String) (-> app.schema/Credentials)
         'read-history $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn read-history (raw)
-            filter-map-kv (as-map raw)
-              fn (date operations)
-                hint-fn $ Fn app.schema/DataKey Dynamic $ ->
-                  MapEntryDecision app.schema/DataKey $ Map app.schema/DataKey Bool
-                MapEntryDecision :keep date $ read-completions operations
+          :code $ quote $ defn read-history (entries)
+            filter-map-kv entries $ fn (date operations)
+              hint-fn $ Fn app.schema/DataKey T $ ->
+                MapEntryDecision app.schema/DataKey $ Map app.schema/DataKey Bool
+              MapEntryDecision :keep date $ read-completions $ as-map operations
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn (Map app.schema/DataKey T)
             -> $ Map app.schema/DataKey $ Map app.schema/DataKey Bool
+            :generics T
         'read-page $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn read-page (name)
             match name
@@ -1136,20 +1141,21 @@
             -> $ Option app.schema/Page
         'read-plan $ %{} 'CodeEntry
           :doc "|Project legacy task maps to the fields used by the task pages."
-          :code $ quote $ defn read-plan (raw)
-            filter-map-kv (as-map raw)
-              fn (key task)
-                hint-fn $ Fn app.schema/DataKey Dynamic $ -> (MapEntryDecision app.schema/DataKey app.schema/TaskView)
-                let
-                    id $ option:and-then (map-get task :id)
-                      fn (value)
-                        match (try-decode-map-as value app.schema/DataKey)
-                          (:ok key) (Option :some key)
-                          (:err _) (Option :none)
-                  MapEntryDecision :keep key $ TaskView :id id :text (map-string task :text) :deleted? $ = (Option :some true) (map-get task :deleted?)
+          :code $ quote $ defn read-plan (entries)
+            filter-map-kv entries $ fn (key task)
+              hint-fn $ Fn app.schema/DataKey T $ -> (MapEntryDecision app.schema/DataKey app.schema/TaskView)
+              let
+                  fields $ as-map task
+                  id $ option:and-then (get fields :id)
+                    fn (value)
+                      match (try-decode-map-as value app.schema/DataKey)
+                        (:ok key) (Option :some key)
+                        (:err _) (Option :none)
+                MapEntryDecision :keep key $ TaskView :id id :text (map-string fields :text) :deleted? $ = (Option :some true) (get fields :deleted?)
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn (Map app.schema/DataKey T)
             -> $ Map app.schema/DataKey app.schema/TaskView
+            :generics T
           :tests $ [] $ %{} 'TestEntry (:name |projects-existing-and-idless-tasks)
             :code $ quote $ let
                 tasks $ read-plan $ {}
@@ -1161,10 +1167,21 @@
               assert=
                 Option :some $ TaskView :id (Option :none) :text |Older :deleted? false
                 get tasks |b
-              assert= 2 $ .len $ read-completions
-                {}
-                  42 $ {} $ :done? true
-                  |42 $ {} $ :done? false
+              let
+                  entries $ {}
+                    42 $ {} $ :done? true
+                    |42 $ {} $ :done? false
+                    :missing nil
+                  completion $ read-completions $ as-map entries
+                  history $ read-history $ as-map
+                    {} (|2026-11-09 entries) (:no-data nil)
+                assert= (Option :some true) (get completion 42)
+                assert= (Option :some false) (get completion |42)
+                assert= (Option :some false) (get completion :missing)
+                assert= (Option :some completion) (get history |2026-11-09)
+                assert=
+                  Option :some $ {}
+                  get history :no-data
             :tags $ #{} :unit
         'read-profile-members $ %{} 'CodeEntry
           :doc "|Project legacy profile member values to display names, keeping unnamed members and original keys."
@@ -1182,20 +1199,19 @@
           :doc "|Read only the session fields needed by task reducers."
           :code $ quote $ defn read-task-session (db sid)
             let
-                data $ option:and-then (get db :sessions)
-                  fn (sessions) (map-get sessions sid)
-              match data
-                (:some session)
-                  let
-                      user-id $ option:map (map-get session :user-id)
-                        fn (value) (decode-map-as value String)
-                      date $ option:map (map-get session :date)
-                        fn (value) (decode-map-as value String)
-                    TaskSession :user-id user-id :date date
-                (:none)
-                  TaskSession :user-id (Option :none) :date $ Option :none
+                session $ option:and-then (get db :sessions)
+                  fn (sessions)
+                    map-get (app.schema/as-map sessions) sid
+                fields $ .unwrap-or (option:map session as-map) ({})
+                user-id $ option:map
+                  option:and-then (get fields :user-id) nil->option
+                  fn (value) (decode-map-as value String)
+                date $ option:map
+                  option:and-then (get fields :date) nil->option
+                  fn (value) (decode-map-as value String)
+              TaskSession :user-id user-id :date date
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) Number (-> app.schema/TaskSession)
+          :schema $ quote $ Fn (Map Tag T) Number (-> app.schema/TaskSession) (:generics T)
         'session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def session
             {} (:user-id nil) (:id nil) (:nickname nil)
@@ -1249,7 +1265,7 @@
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-backup-path! ()
             let
-                now $ extract-time $ get-time!
+                now $ app.schema/as-map $ extract-time (get-time!)
               join-path calcit-dirname |backups
                 str $ .unwrap $ app.schema/map-get now :month
                 str
@@ -1331,7 +1347,7 @@
                     do (dispatch! :session/connect nil sid) (println "|New client.")
                   (:message sid msg)
                     let
-                        action $ parse-cirru-edn msg
+                        action $ app.schema/as-map $ parse-cirru-edn msg
                       match
                         .unwrap-or (app.schema/map-get action :kind) :unknown
                         :op $ let
@@ -1362,7 +1378,8 @@
                   db $ :db reel
                   records $ :records reel
                   session $ option:and-then (app.schema/map-get db :sessions)
-                    fn (sessions) (app.schema/map-get sessions sid)
+                    fn (sessions)
+                      app.schema/map-get (app.schema/as-map sessions) sid
                   new-store $ twig-container db (option:map session app.schema/as-tag-map) (count records)
                   options $ {} $ :key :id
                   changes $ match (get @*client-caches sid)
@@ -1436,7 +1453,7 @@
                       users $ .unwrap-or (app.schema/map-get db :users) ({})
                       user $ .unwrap-or
                         option:map
-                          app.schema/map-get users $ decode-map-as id String
+                          app.schema/map-get (app.schema/as-map users) (decode-map-as id String)
                           , app.schema/as-tag-map
                         {}
                       plan $ .unwrap-or (app.schema/map-get user :plan) ({})
@@ -1449,7 +1466,7 @@
                           (:some day)
                             {} (:plan plan)
                               :operations $ .unwrap-or
-                                app.schema/map-get days $ decode-map-as day String
+                                app.schema/map-get (app.schema/as-map days) (decode-map-as day String)
                                 {}
                           (:none)
                             {} (:plan plan) (:operations nil)
@@ -1474,11 +1491,13 @@
                 fn (key session)
                   hint-fn $ Fn app.schema/DataKey Dynamic $ -> (MapEntryDecision app.schema/DataKey Dynamic)
                   let
-                      user $ option:and-then (app.schema/map-get session :user-id)
+                      user $ option:and-then
+                        app.schema/map-get (app.schema/as-map session) :user-id
                         fn (id)
                           app.schema/map-get users-map $ decode-map-as id String
                     match
-                      option:and-then user $ fn (data) (app.schema/map-get data :name)
+                      option:and-then user $ fn (data)
+                        app.schema/map-get (app.schema/as-map data) :name
                       (:some name) (MapEntryDecision :keep key name)
                       (:none) (MapEntryDecision :keep key nil)
           :examples $ []
@@ -1540,7 +1559,8 @@
                   , sid op-id op-time
               (:user/log-out _payload) (user/log-out db sid)
               (:session/remove-message op-data)
-                match (app.schema/map-get op-data :id)
+                match
+                  app.schema/map-get (app.schema/as-map op-data) :id
                   (:some id)
                     session/remove-message db (decode-map-as id String) sid
                   (:none) db
@@ -1790,7 +1810,8 @@
                 entry $ find
                   &set:to-list $ distinct-values users
                   fn (user)
-                    = (Option :some username) (app.schema/map-get user :name)
+                    = (Option :some username)
+                      app.schema/map-get (app.schema/as-map user) :name
               option:map entry $ fn (user)
                 let
                     fields $ app.schema/as-map user
